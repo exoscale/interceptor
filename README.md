@@ -58,7 +58,7 @@ what you can call `execute-deferred`
 
 ## Helpers
 
-You can apply lenses/guards on handlers via `in` `out` `lens` `guard`
+You can apply lenses/guards on handlers via `in` `out` `lens` `when`
 `discard` functions.
 
 They are just middlewares to the handlers so you can apply them
@@ -121,14 +121,21 @@ be a step with a `:enter` key as itself.
                       (out [:response]))}])
 => {:request 0 :response 1}
 
-;; guard
+;; guard/when
 
 (execute {:a 0}
          [{:name :foo
            :enter (-> (fn [ctx] (update ctx :a inc))
-                      (guard #(contains? % :a)))}])
+                      (when #(contains? % :a)))}])
 => {:a 1}
 
+;; discard output, just return ctx
+
+(execute {:a 0}
+         [{:name :foo
+           :enter (-> (fn [ctx] (prn :yolo))
+                      (discard))}])
+=> {:a 0}
 
 ```
 

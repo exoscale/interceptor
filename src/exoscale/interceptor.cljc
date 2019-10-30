@@ -88,7 +88,7 @@
   (fn [ctx]
     (assoc-in ctx path (f ctx))))
 
-(defn guard
+(defn when
   "Modifies interceptor function to only run on ctx if guard is true'ish"
   [f pred]
   (fn [ctx]
