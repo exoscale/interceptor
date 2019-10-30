@@ -95,7 +95,7 @@ be a step with a `:enter` key as itself.
           interceptor-D])
 
 ;; because we have an async step it will return a deferred
-=> << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], :exoscale.interceptor/stack (), :foo :bar} >>
+=> << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], ::stack (), :foo :bar} >>
 
 ;; no async step, direct result
 (execute {:a 0 :b 0 :d 0}
