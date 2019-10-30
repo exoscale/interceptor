@@ -70,9 +70,8 @@ be a step with a `:enter` key as itself.
 
 ## Usage
 
-(def interceptor-a {:name :A })
 
-``` clj
+```clj
 (def interceptor-A {:name :A
                     :enter (fn [ctx] (update ctx :a inc))
                     :leave (fn [ctx] (assoc ctx :foo :bar))
