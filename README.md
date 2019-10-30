@@ -70,7 +70,44 @@ be a step with a `:enter` key as itself.
 
 ## Usage
 
-...
+(def interceptor-a {:name :A })
+
+``` clj
+(def interceptor-A {:name :A
+                    :enter (fn [ctx] (update ctx :a inc))
+                    :leave (fn [ctx] (assoc ctx :foo :bar))
+                    :error (fn [ctx err] (throw err))})
+
+(def interceptor-B {:name :B
+                    :enter (fn [ctx] (update ctx :b inc))
+                    :error (fn [ctx err] ctx)})
+
+(def interceptor-C {:name :C
+                    :enter (fn [ctx] (d/success-deferred (update ctx :c inc)))})
+
+(def interceptor-D {:name :D
+                    :enter (fn [ctx] (update ctx :d inc))})
+
+
+(execute {:a 0 :b 0 :c 0 :d 0}
+         [interceptor-A
+          interceptor-B
+          interceptor-C
+          interceptor-D])
+
+;; because we have an async step it will return a deferred
+=> << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], :exoscale.interceptor/stack (), :foo :bar} >>
+
+;; no async step, direct result
+(execute {:a 0 :b 0 :d 0}
+         [interceptor-A
+          interceptor-B
+          interceptor-D])
+
+
+=> {:a 1, :b 1, :d 1, ::queue #object[...], ::stack (), :foo :bar}
+
+```
 
 
 ## License
