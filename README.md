@@ -95,7 +95,7 @@ be a step with a `:enter` key as itself.
           interceptor-D])
 
 ;; because we have an async step it will return a deferred
-=> << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], ::stack (), :foo :bar} >>
+=> << {:a 1, :b 1, :c 1, :d 1, :foo :bar} >>
 
 ;; no async step, direct result
 (execute {:a 0 :b 0 :d 0}
@@ -104,9 +104,34 @@ be a step with a `:enter` key as itself.
           interceptor-D])
 
 
-=> {:a 1, :b 1, :d 1, ::queue #object[...], ::stack (), :foo :bar}
+=> {:a 1, :b 1, :d 1, :foo :bar}
+
+;; lens
+
+(execute {:a 0}
+         [{:name :foo :enter (lens inc [:a])}])
+=> {:a 1}
+
+;; same using in/out
+
+(execute {:request 0}
+         [{:name :foo
+           :enter (-> inc
+                      (in [:request])
+                      (out [:response]))}])
+=> {:request 0 :response 1}
+
+;; guard
+
+(execute {:a 0}
+         [{:name :foo
+           :enter (-> (fn [ctx] (update ctx :a inc))
+                      (guard #(contains? % :a)))}])
+=> {:a 1}
+
 
 ```
+
 
 
 ## License
