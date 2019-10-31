@@ -42,9 +42,15 @@ enter A -> enter B -> enter C -> leave C -> leave B -> leave A
 ```
 
 Upon encountering an error it will trigger the `:error` handler of the
-interceptor that triggered it and if you rethrow or re-assoc the error
-in the context it will let the error flow on the other :error handlers
-in the stack.
+interceptor that triggered it and if you return the context unmodified
+or re-assoc the error in the context it will let the error flow on the
+other :error handlers in the stack. You can abort error bubbling by
+removing the error from the context or calling/returning `(resume
+ctx)`, which does the same, in that case it will resume poping from
+the stack of `:leave` functions.
+
+You can also define an interceptor as a simple function or keyword in
+which case it will be turned into `{:enter f}`.
 
 ## Manifold support
 
@@ -75,7 +81,7 @@ be a step with a `:enter` key as itself.
 (def interceptor-A {:name :A
                     :enter (fn [ctx] (update ctx :a inc))
                     :leave (fn [ctx] (assoc ctx :foo :bar))
-                    :error (fn [ctx err] (throw err))})
+                    :error (fn [ctx err] ctx)})
 
 (def interceptor-B {:name :B
                     :enter (fn [ctx] (update ctx :b inc))
@@ -138,6 +144,31 @@ be a step with a `:enter` key as itself.
 => {:a 0}
 
 ```
+## Implementing custom interceptor types
+
+Interceptors creation is behind a protocol so if you keep writing the
+same lenses all the time you might be better of writing something
+tailored to your needs:
+
+For instance for an hypotetical interceptor type that would pull
+from/to :request/:response in the context so you can just define them
+as normal ring handlers.
+
+``` clj
+(defrecord RingInterceptor [enter]
+  Interceptor
+  (interceptor [{:as i :keys [enter]}]
+    (cond-> i
+      enter
+      (assoc :enter (fn [ctx]
+                      (assoc ctx :response (enter (:request ctx))))))))
+
+;; then
+(execute {:request {:params ...}} [(RingInterceptor. (fn [request] {:body "yolo"}))])
+```
+
+You can imagine holding state/dependencies at that level too if that's
+something you desire (arguably that's what context would be for).
 
 
 

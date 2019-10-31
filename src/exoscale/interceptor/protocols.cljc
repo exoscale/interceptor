@@ -11,7 +11,7 @@
   (satisfies? Async x))
 
 (defprotocol Interceptor
-  (interceptor [x] "produces an interceptor from value"))
+  (interceptor [x] "Produces an interceptor from value"))
 
 (extend-protocol Interceptor
   clojure.lang.IPersistentMap
@@ -21,5 +21,9 @@
   (interceptor [r] r)
 
   clojure.lang.Fn
+  (interceptor [f]
+    {:enter f})
+
+  clojure.lang.Keyword
   (interceptor [f]
     {:enter f}))
