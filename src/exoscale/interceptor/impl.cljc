@@ -12,7 +12,7 @@
   (if-let [f (get interceptor stage)]
     (try
       (let [ctx' (if err
-                   (f (dissoc ctx :exoscale.interceptor/:error) err)
+                   (f (dissoc ctx :exoscale.interceptor/error) err)
                    (f ctx))]
         (cond-> ctx'
           (p/async? ctx')
