@@ -12,18 +12,3 @@
 
 (defprotocol Interceptor
   (interceptor [x] "Produces an interceptor from value"))
-
-(extend-protocol Interceptor
-  clojure.lang.IPersistentMap
-  (interceptor [m] m)
-
-  clojure.lang.IRecord
-  (interceptor [r] r)
-
-  clojure.lang.Fn
-  (interceptor [f]
-    {:enter f})
-
-  clojure.lang.Keyword
-  (interceptor [f]
-    {:enter f}))

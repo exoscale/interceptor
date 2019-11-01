@@ -8,12 +8,12 @@
   #?(:clj (clojure.lang.PersistentQueue/EMPTY)
      :cljs #queue []))
 
-(defn try-f
-  [ctx f err]
-  (if f
+(defn run-stage
+  [ctx interceptor stage err]
+  (if-let [f (get interceptor stage)]
     (try
       (let [ctx' (if err
-                   (f ctx err)
+                   (f (dissoc ctx :exoscale.interceptor/:error) err)
                    (f ctx))]
         (cond-> ctx'
           (p/async? ctx')
@@ -28,9 +28,10 @@
     (let [stack (:exoscale.interceptor/stack ctx)]
       (if-let [interceptor (peek stack)]
         (recur (let [err (:exoscale.interceptor/error ctx)]
-                 (try-f (assoc ctx :exoscale.interceptor/stack (pop stack))
-                        (get interceptor (if err :error :leave))
-                        err)))
+                 (run-stage (assoc ctx :exoscale.interceptor/stack (pop stack))
+                            interceptor
+                            (if err :error :leave)
+                            err)))
         ctx))))
 
 (defn enter [ctx]
@@ -45,7 +46,7 @@
         (-> (assoc ctx
                    :exoscale.interceptor/queue (pop queue)
                    :exoscale.interceptor/stack (conj stack interceptor))
-            (try-f (:enter interceptor) nil)
+            (run-stage interceptor :enter nil)
             recur)))))
 
 (defn complete

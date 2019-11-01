@@ -1,10 +1,39 @@
 (ns exoscale.interceptor
-  (:refer-clojure :exclude [when])
+  (:refer-clojure :exclude [when throw])
   (:require [exoscale.interceptor.impl :as impl]
             [exoscale.interceptor.protocols :as p]
-            ;; this will only be loaded if manifold is on the
-            ;; classppath
-            #?(:clj [exoscale.interceptor.manifold])))
+            ;; Will only do anything if libs are present on classpath
+            [exoscale.interceptor.core-async]
+            #?(:clj [exoscale.interceptor.manifold])
+            #?(:clj [exoscale.interceptor.auspex])))
+
+(defrecord Interceptor [name enter leave error])
+
+(extend-protocol p/Interceptor
+  #?(:clj clojure.lang.IPersistentMap
+     :cljs cljs.core.PersistentHashMap)
+  (interceptor [m] (map->Interceptor m))
+
+  clojure.lang.IRecord
+  (interceptor [r] r)
+
+  #?(:clj clojure.lang.Fn
+     :cljs function)
+  (interceptor [f]
+    {:enter f})
+
+  clojure.lang.Keyword
+  (interceptor [f]
+    (p/interceptor {:enter f}))
+
+  clojure.lang.Symbol
+  (interceptor [s]
+    (p/interceptor (resolve s)))
+
+  clojure.lang.Var
+  (interceptor [v]
+    (p/interceptor (deref v))))
+
 
 ;;; API
 
@@ -42,19 +71,15 @@
   ([ctx interceptors]
    (impl/execute ctx interceptors)))
 
-
 ;;; Error handling
 
-
-(defn resume
-  "Removes error from context, effectively causing execution to resume
-  normally (not chaining other errors)"
-  [ctx]
-  (dissoc ctx ::error))
-
+(defn error
+  "Adds error to context, potentially triggering :error stage on
+  current/next interceptor"
+  [ctx error]
+  (assoc ctx ::error error))
 
 ;;; queue/stack manipulation
-
 
 (defn terminate
   "Removes all remaining interceptors from context's execution queue.
@@ -68,7 +93,9 @@
   This effectively short-circuits execution of
   Interceptors' :enter/:leave and returns the context"
   [ctx]
-  (assoc ctx ::queue nil ::stack nil))
+  (assoc ctx
+         ::queue nil
+         ::stack nil))
 
 (defn enqueue
   "Adds interceptors to current context"
@@ -113,10 +140,9 @@
     (doto ctx f)))
 
 (comment
-  (def async-inc-interceptor {:id ::asdfid
+  (def async-inc-interceptor {:name ::asdfid
                                :error (fn [ctx err]
-                                        (prn :err-async (resume ctx))
-                                        (resume ctx))
+                                        ctx)
                                :enter (fn [ctx]
                                         (prn :enter-async)
                                         (d/error-deferred (update ctx :a inc))
@@ -125,60 +151,66 @@
                                         (prn :leave-async)
                                         (d/success-deferred (update ctx :b inc)))})
 
- (def inc-interceptor1 {:id ::inc1
+ (def inc-interceptor1 {:name ::inc1
                         :error (fn [ctx err]
                                  (prn "error passed in inc 1" )
-                                 (resume ctx)
-                                 ;; ctx
-                                 )
-                        :enter (fn [ctx]
-                                 (prn :enter-inc1)
-                                 (update ctx :a inc))
-                        :leave (fn [ctx]
-                                 (prn :leave-inc1)
-                                 (update ctx :b inc))})
-
- (def inc-interceptor2 {:id ::inc2
-                        :error (fn [ctx err]
-                                 (prn "error passed in inc 2" )
-                                 (resume ctx))
-                        :enter (fn [ctx]
-                                 (prn :enter-inc2)
-                                 (throw (ex-info "boom" {}))
-                                 (update ctx :a inc))
-                        :leave (fn [ctx]
-                                 (prn :leave-inc2)
-                                 ;; (throw (ex-info "" {}))
-                                 (update ctx :b inc))})
-
- (def inc-interceptor3 {:id ::inc3
-                        :error (fn [ctx err]
-                                 (prn "error passed in inc 3" )
+                                 ;; (resume ctx)
                                  ctx)
                         :enter (fn [ctx]
-                                 (prn :enter-inc3)
+                                 (prn :enter-1)
                                  (update ctx :a inc))
                         :leave (fn [ctx]
-                                 (prn :leave-inc3)
+                                 (prn :leave-1)
+                                 (update ctx :b inc))})
+
+ (def inc-interceptor2 {:name ::inc2
+                        :error (fn [ctx err]
+                                 (prn "error passed in inc 2" )
+                                 ;; (ignore ctx)
+                                 ;; (error ctx err)
+                                 ;; (throw err)
+                                 )
+                        :enter (fn [ctx]
+                                 (prn :enter-2)
+                                 ;; (throw (ex-info "boom" {}))
+                                 (update ctx :a inc))
+                        :leave (fn [ctx]
+                                 (prn :leave-2)
+                                 (update ctx :b inc))})
+
+ (def inc-interceptor3 {:name ::inc3
+                        :error (fn [ctx err]
+                                 (prn "error passed in inc 3" )
+                                 ;; (throw err)
+                                 )
+                        :enter (fn [ctx]
+                                 (prn :enter-3)
+                                 (update ctx :a inc))
+                        :leave (fn [ctx]
+                                 (prn :leave-3)
                                  ;; (throw (ex-info "" {}))
                                  (update ctx :b inc))})
 
- ;; (execute {:a 0 :b 0} [inc-interceptor1 inc-interceptor2])
+
+
+ ;; (execute {:a 0 :b 0} [inc-interceptor1 inc-interceptor2 inc-interceptor3])
 
 
 
  (prn "---------------------")
- (execute {:a 0 :b 0}
-          [
-           inc-interceptor1
-           ;; async-inc-interceptor
-           inc-interceptor2
-           inc-interceptor3
-           ])
+ (prn :result
+      (execute {:a 0 :b 0}
+               [
+                inc-interceptor1
+                ;; async-inc-interceptor
+                inc-interceptor2
+                inc-interceptor3
+                :a
+                ]))
 
 
  ;; (def inc-interceptor3
- ;;   {:id ::inc3
+ ;;   {:name ::inc3
  ;;    :enter (-> (fn [ctx] ctx)
  ;;               (in [:request])
  ;;               (out [:response])

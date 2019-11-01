@@ -1,27 +1,25 @@
-(ns exoscale.interceptor.manifold
+(ns exoscale.interceptor.auspex
   (:require [exoscale.interceptor.utils :as u]))
 
-(u/compile-when-available manifold.deferred
+(u/compile-when-available qbits.auspex
   (in-ns 'exoscale.interceptor)
-
-  (require '[manifold.deferred :as d])
+  (require '[qbits.auspex :as auspex])
   (require '[exoscale.interceptor.utils :as u])
   (require '[exoscale.interceptor.protocols :as p])
   (require '[exoscale.interceptor.impl :as impl])
-
   (extend-protocol p/Async
-    manifold.deferred.IDeferred
-    (then [d f] (d/chain' d f))
-    (catch [d f] (d/catch' d f)))
+    java.util.concurrent.CompletableFuture
+    (then [d f] (auspex/then d f))
+    (catch [d f] (auspex/catch d f)))
 
-  (defn execute-deferred
+  (defn execute-future
     "Like `exoscale.interceptor/execute` but ensures we always get a
-  manifild.Deferred back"
+  CompletableFuture back"
     ([ctx interceptors]
      (try
        (let [result (impl/execute ctx interceptors)]
          (cond-> result
-           (not (d/deferred? result))
-           (d/success-deferred)))
+           (not (auspex/future? result))
+           (auspex/success-future)))
        (catch Exception e
-         (d/error-deferred e))))))
+         (auspex/error-future e))))))

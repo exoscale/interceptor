@@ -1,30 +1,37 @@
 # Interceptor
 
-disclaimer: So far just week-end/evenings experiment.
-
-The code/design is heavily inspired from pedestal/sieparri.
+The code/design is *heavily* inspired from
+pedestal.interceptor/sieparri.
 
 It mimics pedestal interceptor behavior, but adds async lib agnostic
 support with a default manifold impl.
 
-Some minor differences with pedestal:
+Some minor differences with pedestal/sieparri:
 
-* no nested exceptions when :error handlers bubble up, no error wrapping either
+* no nested exceptions when :error handlers propagate, no error
+  wrapping either
 
-* potential support for cljs easily achievable
+* cljs support
 
 * tiny codebase
 
 * less is more: no :suppressed, :bindings, :terminators
 
+* no handler, request/response, just context (it's easy to emulate
+  these)
+
 ## How it works:
 
 It follows the interceptor pattern.
 
-`execute` takes a context (map) and chains it to the "interceptors" .
+`execute` takes a context (map) and chains it to the "interceptors"
+that can modify it and ultimately returns a value or the context
+itself.
 
 An interceptor is just a map, with `:enter` key and potentially
 `:leave` `:error` and `:name` (+ whatever you want to add).
+
+### Stages
 
 `:enter` and `:leave` are function of the context and return a new
 context. `:error` takes 2 arguments, the context and the error that
@@ -41,26 +48,36 @@ enter A -> enter B -> enter C -> leave C -> leave B -> leave A
 
 ```
 
-Upon encountering an error it will trigger the `:error` handler of the
-interceptor that triggered it and if you return the context unmodified
-or re-assoc the error in the context it will let the error flow on the
-other :error handlers in the stack. You can abort error bubbling by
-removing the error from the context or calling/returning `(resume
-ctx)`, which does the same, in that case it will resume poping from
-the stack of `:leave` functions.
+### Errors
 
-You can also define an interceptor as a simple function or keyword in
-which case it will be turned into `{:enter f}`.
+Upon encountering an error it will trigger the next `:error` handler
+available, so either one on the interceptor that triggered it, if
+there is one, or the next one on the stack. If you just return the
+context from the `:error` handler it will resume with the execution of
+the stack with that context; if you rethrow the error, or assoc it/one
+under ::error (or via `(error ctx err)`) in the context and return it,
+it will trigger the next error handler available on the stack.
 
-## Manifold support
+The rule of thumb is to use error handlers to manage errors that
+should trigger a termination of the processing and have control on the
+flow of that termination (instantaneous return or propagating).  You
+should still use normal error handling in your `:enter` handlers if
+you want to let the normal flow of execution continue (ex if you need
+to go to the next `:enter` handler).
 
-You can mix steps that return deferreds with normal steps like you
-would do in chain it will work transparently.
+This works exactly to what's defined in the original interceptor
+pattern.
 
-note: if you use the normal execute the first interceptor will dict
-the return value type (if it starts with a deferred you get a deferred
-back). If you want to ensure you always get a deferred back no matter
-what you can call `execute-deferred`
+## Manifold, core.async, CompletableFuture support
+
+You can mix steps that return deferreds/CompletableFutures/Channels
+with normal steps like it will work transparently.
+
+note: if you use the normal execute the first async interceptor in the
+chain will dict the return value type (if it starts with a deferred
+you get a deferred back). You can control the return values via
+`execute-deferred`, `execute-chan` and `execute-future` and they still
+allow you to mix internal steps with whatever lib you like/use.
 
 ## Helpers
 
@@ -71,8 +88,15 @@ They are just middlewares to the handlers so you can apply them
 separately to the handlers and have full control over their execution
 order.
 
-An interceptor can also just be a function. In that case it will just
-be a step with a `:enter` key as itself.
+## Interceptors definition
+
+You can define interceptors as maps as described earlier but we also
+by default allow to specify them in other formats/types.
+
+* Keyword -> {:enter k}
+* Function -> {:enter f}
+* Symbol -> resolved to anything that should implement the Interceptor protocol
+* Var -> deref'ed to something that should implement the Interceptor protocol
 
 ## Usage
 
@@ -147,8 +171,8 @@ be a step with a `:enter` key as itself.
 ## Implementing custom interceptor types
 
 Interceptors creation is behind a protocol so if you keep writing the
-same lenses all the time you might be better of writing something
-tailored to your needs:
+same "lenses" all the time you might be better of writing something
+tailored to your needs.
 
 For instance for an hypotetical interceptor type that would pull
 from/to :request/:response in the context so you can just define them
@@ -168,13 +192,12 @@ as normal ring handlers.
 ```
 
 You can imagine holding state/dependencies at that level too if that's
-something you desire (arguably that's what context would be for).
-
+something you desire (that's doable with context too).
 
 
 ## License
 
-Copyright © 2019 FIXME
+Copyright © 2019 exoscale
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
