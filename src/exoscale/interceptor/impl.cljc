@@ -1,6 +1,5 @@
 (ns exoscale.interceptor.impl
-  (:require [exoscale.interceptor.protocols :as p])
-  (:import (clojure.lang PersistentQueue)))
+  (:require [exoscale.interceptor.protocols :as p]))
 
 ;;; Core api
 
