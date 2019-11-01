@@ -9,7 +9,7 @@
   (require '[exoscale.interceptor.impl :as impl])
   (extend-protocol p/Async
     java.util.concurrent.CompletableFuture
-    (then [d f] (auspex/then d f))
+    (then [d f] (auspex/chain d f))
     (catch [d f] (auspex/catch d f)))
 
   (defn execute-future
