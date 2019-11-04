@@ -238,4 +238,4 @@
                                                         [dinc]))))
 
       (is (instance? Exception (a/<!! (ixa/execute-chan start-ctx
-                                                        [{:enter throwing}])))))))a
+                                                        [{:enter throwing}])))))))
