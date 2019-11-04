@@ -190,8 +190,8 @@ You can imagine holding state/dependencies at that level too if that's
 something you desire (that's doable with context too).
 ## Api docs
 
-[![cljdoc badge](https://cljdoc.xyz/badge/exoscale/interceptor)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT) interceptor
+[![cljdoc badge](https://cljdoc.xyz/badge/exoscale/interceptor)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT)
 
 ## Installation
 
-[![Clojars Project](https://img.shields.io/clojars/v/exoscale/interceptor.svg)](https://clojars.org/interceptoroscale/interceptor)
+[![Clojars Project](https://img.shields.io/clojars/v/exoscale/interceptor.svg)](https://clojars.org/exoscale/interceptor)
