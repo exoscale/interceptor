@@ -2,10 +2,7 @@
   (:refer-clojure :exclude [when throw])
   (:require [exoscale.interceptor.impl :as impl]
             [exoscale.interceptor.protocols :as p]
-            ;; Will only do anything if libs are present on classpath
-            [exoscale.interceptor.core-async]
-            #?(:clj [exoscale.interceptor.manifold])
-            #?(:clj [exoscale.interceptor.auspex])))
+            [exoscale.interceptor.utils :as u]))
 
 (defrecord Interceptor [name enter leave error])
 
@@ -139,128 +136,174 @@
   (fn [ctx]
     (doto ctx f)))
 
+
+;;; Manifold support
+
+(u/compile-when-available manifold.deferred
+  (def execute-deferred (requiring-resolve 'exoscale.interceptor.manifold/execute-deferred)))
+
+ ;;; Auspex/completablefuture support
+(u/compile-when-available qbits.auspex
+  (def execute-future (requiring-resolve 'exoscale.interceptor.auspex/execute-future)))
+
+  ;;; Core async support
+(u/compile-when-available #?(:clj clojure.core.async
+                             :cljs cljs.core.async)
+  (require 'exoscale.interceptor.core-async)
+  (def execute-chan #'exoscale.interceptor.core-async/execute-chan))
+
+
+
+
+
 (comment
   (def async-inc-interceptor {:name ::asdfid
-                               :error (fn [ctx err]
-                                        ctx)
-                               :enter (fn [ctx]
-                                        (prn :enter-async)
-                                        (d/error-deferred (update ctx :a inc))
-                                        )
-                               :leave (fn [ctx]
-                                        (prn :leave-async)
-                                        (d/success-deferred (update ctx :b inc)))})
+                              :error (fn [ctx err]
+                                       ctx)
+                              :enter (fn [ctx]
+                                       (prn :enter-async)
+                                       (d/error-deferred (update ctx :a inc))
+                                       )
+                              :leave (fn [ctx]
+                                       (prn :leave-async)
+                                       (d/success-deferred (update ctx :b inc)))})
 
- (def inc-interceptor1 {:name ::inc1
-                        :error (fn [ctx err]
-                                 (prn "error passed in inc 1" )
-                                 ;; (resume ctx)
-                                 ctx)
-                        :enter (fn [ctx]
-                                 (prn :enter-1)
-                                 (update ctx :a inc))
-                        :leave (fn [ctx]
-                                 (prn :leave-1)
-                                 (update ctx :b inc))})
+  (def inc-interceptor1 {:name ::inc1
+                         :error (fn [ctx err]
+                                  (prn "error passed in inc 1" )
+                                  ;; (resume ctx)
+                                  ctx)
+                         :enter (fn [ctx]
+                                  (prn :enter-1)
+                                  (update ctx :a inc))
+                         :leave (fn [ctx]
+                                  (prn :leave-1)
+                                  (update ctx :b inc))})
 
- (def inc-interceptor2 {:name ::inc2
-                        :error (fn [ctx err]
-                                 (prn "error passed in inc 2" )
-                                 ;; (ignore ctx)
-                                 ;; (error ctx err)
-                                 ;; (throw err)
-                                 )
-                        :enter (fn [ctx]
-                                 (prn :enter-2)
-                                 ;; (throw (ex-info "boom" {}))
-                                 (update ctx :a inc))
-                        :leave (fn [ctx]
-                                 (prn :leave-2)
-                                 (update ctx :b inc))})
+  (def inc-interceptor2 {:name ::inc2
+                         :error (fn [ctx err]
+                                  (prn "error passed in inc 2" )
+                                  ;; (ignore ctx)
+                                  ;; (error ctx err)
+                                  ;; (throw err)
+                                  )
+                         :enter (fn [ctx]
+                                  (prn :enter-2)
+                                  ;; (throw (ex-info "boom" {}))
+                                  (update ctx :a inc))
+                         :leave (fn [ctx]
+                                  (prn :leave-2)
+                                  p                                 (update ctx :b inc))})
 
- (def inc-interceptor3 {:name ::inc3
-                        :error (fn [ctx err]
-                                 (prn "error passed in inc 3" )
-                                 ;; (throw err)
-                                 )
-                        :enter (fn [ctx]
-                                 (prn :enter-3)
-                                 (update ctx :a inc))
-                        :leave (fn [ctx]
-                                 (prn :leave-3)
-                                 ;; (throw (ex-info "" {}))
-                                 (update ctx :b inc))})
-
-
-
- ;; (execute {:a 0 :b 0} [inc-interceptor1 inc-interceptor2 inc-interceptor3])
+  (def inc-interceptor3 {:name ::inc3
+                         :error (fn [ctx err]
+                                  (prn "error passed in inc 3" )
+                                  ;; (throw err)
+                                  )
+                         :enter (fn [ctx]
+                                  (prn :enter-3)
+                                  (update ctx :a inc))
+                         :leave (fn [ctx]
+                                  (prn :leave-3)
+                                  ;; (throw (ex-info "" {}))
+                                  (update ctx :b inc))})
 
 
 
- (prn "---------------------")
- (prn :result
-      (execute {:a 0 :b 0}
-               [
-                inc-interceptor1
-                ;; async-inc-interceptor
-                inc-interceptor2
-                inc-interceptor3
-                :a
-                ]))
+  ;; (execute {:a 0 :b 0} [inc-interceptor1 inc-interceptor2 inc-interceptor3])
 
 
- ;; (def inc-interceptor3
- ;;   {:name ::inc3
- ;;    :enter (-> (fn [ctx] ctx)
- ;;               (in [:request])
- ;;               (out [:response])
- ;;               (guard #(...))
- ;;               (discard #(...)))}))
+
+  (prn "---------------------")
+  (prn :result
+       (execute {:a 0 :b 0}
+                [
+                 inc-interceptor1
+                 ;; async-inc-interceptor
+                 inc-interceptor2
+                 inc-interceptor3
+                 :a
+                 ]))
 
 
- ;; (def interceptor-A {:name :A
- ;;                     :enter (fn [ctx] (update ctx :a inc))
- ;;                     :leave (fn [ctx] (assoc ctx :foo :bar))
- ;;                     :error (fn [ctx err] (throw err))})
-
- ;; (def interceptor-B {:name :B
- ;;                     :enter (fn [ctx] (update ctx :b inc))
- ;;                     :error (fn [ctx err] ctx)})
-
- ;; (def interceptor-C {:name :C
- ;;                     :enter (fn [ctx] (d/success-deferred (update ctx :c inc)))})
-
- ;; (def interceptor-D {:name :D
- ;;                     :enter (fn [ctx] (update ctx :d inc))})
+  ;; (def inc-interceptor3
+  ;;   {:name ::inc3
+  ;;    :enter (-> (fn [ctx] ctx)
+  ;;               (in [:request])
+  ;;               (out [:response])
+  ;;               (guard #(...))
+  ;;               (discard #(...)))}))
 
 
- ;; (execute {:a 0 :b 0 :c 0 :d 0}
- ;;          [interceptor-A
- ;;           interceptor-B
- ;;           interceptor-C
- ;;           interceptor-D])
+  ;; (def interceptor-A {:name :A
+  ;;                     :enter (fn [ctx] (update ctx :a inc))
+  ;;                     :leave (fn [ctx] (assoc ctx :foo :bar))
+  ;;                     :error (fn [ctx err] (throw err))})
 
- ;; ;; because we have an async step it will return a deferred
- ;; => << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], :exoscale.interceptor/stack (), :foo :bar} >>
+  ;; (def interceptor-B {:name :B
+  ;;                     :enter (fn [ctx] (update ctx :b inc))
+  ;;                     :error (fn [ctx err] ctx)})
 
- ;; ;; no async step, direct result
- ;; (execute {:a 0 :b 0 :d 0}
- ;;          [interceptor-A
- ;;           interceptor-B
- ;;           interceptor-D])
+  ;; (def interceptor-C {:name :C
+  ;;                     :enter (fn [ctx] (d/success-deferred (update ctx :c inc)))})
 
-
- ;; => {:a 1, :b 1, :d 1, ::queue #object[...], ::stack (), :foo :bar}
-
- ;; (execute {:a 0}
- ;;          [{:name :foo
- ;;            :enter (-> (fn [ctx] (update ctx :a inc))
- ;;                       (guard #(contains? % :a)))}])
+  ;; (def interceptor-D {:name :D
+  ;;                     :enter (fn [ctx] (update ctx :d inc))})
 
 
- ;; (execute {:request 0}
- ;;          [{:name :foo
- ;;            :enter (-> inc
- ;;                       (in [:request])
- ;;                       (out [:response]))}])
- )
+  ;; (execute {:a 0 :b 0 :c 0 :d 0}
+  ;;          [interceptor-A
+  ;;           interceptor-B
+  ;;           interceptor-C
+  ;;           interceptor-D])
+
+  ;; ;; because we have an async step it will return a deferred
+  ;; => << {:a 1, :b 1, :c 1, :d 1, ::queue #object[...], :exoscale.interceptor/stack (), :foo :bar} >>
+
+  ;; ;; no async step, direct result
+  ;; (execute {:a 0 :b 0 :d 0}
+  ;;          [interceptor-A
+  ;;           interceptor-B
+  ;;           interceptor-D])
+
+
+  ;; => {:a 1, :b 1, :d 1, ::queue #object[...], ::stack (), :foo :bar}
+
+  ;; (execute {:a 0}
+  ;;          [{:name :foo
+  ;;            :enter (-> (fn [ctx] (update ctx :a inc))
+  ;;                       (guard #(contains? % :a)))}])
+
+
+  ;; (execute {:request 0}
+  ;;          [{:name :foo
+  ;;            :enter (-> inc
+  ;;                       (in [:request])
+  ;;                       (out [:response]))}])
+  )
+(comment
+
+(require '[clojure.core.async :as a] )
+(prn (a/<!! (execute-chan {} [(fn [ctx]
+                                (doto (a/promise-chan)
+                                  (a/offer! (assoc ctx :foo 1))))
+                              (fn [ctx]
+                                (doto (a/promise-chan)
+                                  (a/offer! (assoc ctx :foo 1))))
+                              (fn [ctx]
+                                (doto (a/promise-chan)
+                                  (a/offer! (assoc ctx :foo 1))))
+
+                              (fn [ctx]
+                                (doto (a/promise-chan)
+                                  (a/close!)))
+
+                              {:error (fn [ctx e]                                        ctx)
+                               :enter
+                               (fn [ctx]
+                                 (prn :bar ctx)
+                                 (throw (ex-info "Boom" {}))
+                                 (doto (a/promise-chan)
+                                   (a/offer! (assoc ctx :bar 1))))}
+                              ])))
+  )

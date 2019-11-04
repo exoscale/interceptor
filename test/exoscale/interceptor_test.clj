@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [exoscale.interceptor :as ix]
             [manifold.deferred :as d]
+            [qbits.auspex :as q]
             [clojure.core.async :as a]))
 
 (def iinc {:error (fn [ctx err]
@@ -109,27 +110,27 @@
 
     (is (= default-result
            (-> @(ix/execute start-ctx
-                           [dinc dinc dinc])
+                            [dinc dinc dinc])
                clean-ctx)))
 
     (is (= default-result
            (-> @(ix/execute start-ctx
-                           [dinc dinc iinc])
+                            [dinc dinc iinc])
                clean-ctx)))
 
     (is (= default-result
            (-> @(ix/execute start-ctx
-                           [dinc iinc dinc])
+                            [dinc iinc dinc])
                clean-ctx)))
 
     (is (= default-result
            (-> @(ix/execute start-ctx
-                           [iinc dinc dinc])
+                            [iinc dinc dinc])
                clean-ctx)))
 
     (is (= default-result
            (-> @(ix/execute start-ctx
-                           [dinc dinc dinc])
+                            [dinc dinc dinc])
                clean-ctx)))
 
     (is (= {:a 2 :b 2}
@@ -142,9 +143,96 @@
   (let [dinc {:enter (fn [ctx] (d/success-deferred (update ctx :a inc)))
               :leave (fn [ctx] (d/error-deferred ex))}]
     (is (thrown? Exception @(ix/execute-deferred start-ctx
-                                                 [dinc])))
+                                                 [dinc])))))
 
-    ;; (is (thrown? Exception @(ix/execute-deferred start-ctx
-    ;;                                              [iinc])))
-    ))
 
+(deftest auspex-test
+  (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
+              :leave (fn [ctx] (q/success-future (update ctx :b inc)))}]
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc iinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc iinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [iinc dinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc dinc])
+               clean-ctx)))
+
+    (is (= {:a 2 :b 2}
+           (-> @(ix/execute start-ctx [dinc dinc])
+               clean-ctx)))
+
+    (is (= {}
+           (-> @(ix/execute-future {} [])
+               clean-ctx))))
+  (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
+              :leave (fn [ctx] (q/error-future ex))}]
+    (is (thrown? Exception @(ix/execute-future start-ctx
+                                                 [dinc])))))
+
+(deftest core-async-test
+  (let [dinc {:enter (fn [ctx]
+                       (doto (a/promise-chan)
+                         (a/offer! (update ctx :a inc))))
+              :leave (fn [ctx]
+                       (doto (a/promise-chan)
+                         (a/offer! (update ctx :b inc))))}]
+
+    (is (= default-result
+           (-> (a/<!! (ix/execute start-ctx
+                                  [dinc dinc dinc]))
+               clean-ctx)))
+
+    (is (= default-result
+           (-> (a/<!! (ix/execute-chan start-ctx
+                                       [dinc dinc iinc]))
+               clean-ctx)))
+
+    (is (= default-result
+           (-> (a/<!! (ix/execute-chan start-ctx
+                                       [dinc iinc dinc]))
+               clean-ctx)))
+
+    (is (= default-result
+           (-> (a/<!! (ix/execute-chan start-ctx
+                                       [iinc dinc dinc]))
+               clean-ctx)))
+
+    (is (= default-result
+           (-> (a/<!! (ix/execute-chan start-ctx
+                                       [dinc dinc dinc]))
+               clean-ctx)))
+
+    (is (= {:a 2 :b 2}
+           (-> (a/<!! (ix/execute-chan start-ctx [dinc dinc]))
+               clean-ctx)))
+
+    (is (= {}
+           (-> (a/<!! (ix/execute-chan {} []))
+               clean-ctx)))
+    (let [dinc {:enter (fn [ctx] (doto (a/promise-chan (a/offer! (update ctx :a inc)))))
+                :leave (fn [ctx]
+                         (doto (a/promise-chan (a/offer! (ex-info "boom" {})))))}]
+
+      (is (instance? Exception (a/<!! (ix/execute-chan start-ctx
+                                                       [dinc]))))
+
+      (is (instance? Exception (a/<!! (ix/execute-chan start-ctx
+                                                       [{:enter throwing}])))))))a

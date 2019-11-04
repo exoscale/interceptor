@@ -1,39 +1,66 @@
 (ns exoscale.interceptor.core-async
-  (:require [exoscale.interceptor.utils :as u]))
+  (:require #?(:clj [clojure.core.async :as async]
+               :cljs [cljs.core.async :as async])
+            [exoscale.interceptor.utils :as u]
+            [exoscale.interceptor.protocols :as p]
+            [exoscale.interceptor.impl :as impl]))
 
-(u/compile-when-available clojure.core.async
-  (in-ns 'exoscale.interceptor)
+(defmacro with-promise
+  [p & body]
+  `(let [~p (async/promise-chan)]
+     ~@body
+     ~p))
 
-  #?(:clj (require '[clojure.core.async :as async])
-     :cljs (require '[cljs.core.async :as async]))
-  (require '[exoscale.interceptor.utils :as u])
-  (require '[exoscale.interceptor.protocols :as p])
-  (require '[exoscale.interceptor.impl :as impl])
+(defn channel?
+  [x]
+  (instance? #?(:clj clojure.core.async.impl.channels.ManyToManyChannel
+                :cljs cljs.core.async.impl.channels.ManyToManyChannel)
+             x))
 
-  (extend-protocol p/Async
-    #?(:clj clojure.core.async.impl.protocols.Channel
-       :cljs cljs.core.async.impl.channels/ManyToManyChannel)
-    (then [ch f]
-      (let [out-ch (async/promise-chan)]
-        (async/take! ch #(async/offer! out-ch %))
-        out-ch))
-    (catch [ch f]
-        (let [out-ch (async/promise-chan)]
-          (async/take! ch #(async/offer! out-ch
-                                         (cond-> %
-                                           (u/exception? %)
-                                           (f %))))
-          out-ch)))
+(defn wrap
+  [x]
+  (cond-> x
+    (not (channel? x))
+    (async/promise-chan x)))
 
-  (defn execute-chan
-    ""
-    ([ctx interceptors]
-     (try
-       (let [result (impl/execute ctx interceptors)]
-         (cond-> result
-           (not (instance? #?(:clj clojure.core.async.impl.protocols.Channel
-                              :cljs cljs.core.async.impl.channels/ManyToManyChannel)
-                           result))
-           (async/promise-chan)))
-       (catch #?(:clj Exception :cljs :default) e
-         (async/promise-chan e))))))
+(defn fmap
+  [ch f]
+  (async/take! ch
+               #(if (channel? %)
+                  (fmap % f)
+                  (f %))))
+
+(defn offer!
+  [ch x]
+  (if x
+    (async/offer! ch x)
+    (async/close! ch))
+  ch)
+
+(extend-protocol p/Async
+  #?(:cljs cljs.core.async.impl.channels.ManyToManyChannel
+     :clj clojure.core.async.impl.channels.ManyToManyChannel)
+  (then [ch f]
+    (with-promise out-ch
+      (fmap ch #(offer! out-ch (f %)))))
+
+  (catch [ch f]
+    (with-promise out-ch
+      (fmap ch
+            #(offer! out-ch
+                     (cond-> %
+                       (u/exception? %)
+                       (f %)))))))
+
+(defn execute-chan
+  ([ctx interceptors]
+   (try
+     (let [result (impl/execute ctx interceptors)]
+       (if (channel? result)
+         result
+         (offer! (async/promise-chan)
+                 result)))
+
+     (catch #?(:clj Exception :cljs :default) e
+       (doto (async/promise-chan)
+         (async/offer! e))))))

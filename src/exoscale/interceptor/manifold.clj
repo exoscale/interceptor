@@ -1,27 +1,21 @@
 (ns exoscale.interceptor.manifold
-  (:require [exoscale.interceptor.utils :as u]))
+  (:require [exoscale.interceptor.protocols :as p]
+            [exoscale.interceptor.impl :as impl]
+            [manifold.deferred :as d]))
 
-(u/compile-when-available manifold.deferred
-  (in-ns 'exoscale.interceptor)
+(extend-protocol p/Async
+  manifold.deferred.IDeferred
+  (then [d f] (d/chain' d f))
+  (catch [d f] (d/catch' d f)))
 
-  (require '[manifold.deferred :as d])
-  (require '[exoscale.interceptor.utils :as u])
-  (require '[exoscale.interceptor.protocols :as p])
-  (require '[exoscale.interceptor.impl :as impl])
-
-  (extend-protocol p/Async
-    manifold.deferred.IDeferred
-    (then [d f] (d/chain' d f))
-    (catch [d f] (d/catch' d f)))
-
-  (defn execute-deferred
-    "Like `exoscale.interceptor/execute` but ensures we always get a
+(defn execute-deferred
+  "Like `exoscale.interceptor/execute` but ensures we always get a
   manifild.Deferred back"
-    ([ctx interceptors]
-     (try
-       (let [result (impl/execute ctx interceptors)]
-         (cond-> result
-           (not (d/deferred? result))
-           (d/success-deferred)))
-       (catch Exception e
-         (d/error-deferred e))))))
+  ([ctx interceptors]
+   (try
+     (let [result (impl/execute ctx interceptors)]
+       (cond-> result
+         (not (d/deferred? result))
+         (d/success-deferred)))
+     (catch Exception e
+       (d/error-deferred e)))))
