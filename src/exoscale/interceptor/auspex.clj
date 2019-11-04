@@ -13,8 +13,12 @@
   "Like `exoscale.interceptor/execute` but ensures we always get a
   CompletableFuture back"
   ([ctx interceptors]
+   (execute-future (assoc ctx
+                          :exoscale.interceptor/queue
+                          (impl/queue interceptors))))
+  ([ctx]
    (try
-     (let [result (impl/execute ctx interceptors)]
+     (let [result (impl/execute ctx)]
        (cond-> result
          (not (auspex/future? result))
          (auspex/success-future)))

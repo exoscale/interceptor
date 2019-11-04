@@ -99,9 +99,7 @@
 (defn enqueue
   "Adds interceptors to current context"
   [ctx interceptors]
-  (update ctx ::queue
-          into (keep p/interceptor) interceptors))
-
+  (update ctx ::queue impl/queue interceptors))
 
 ;;; helpers/middlwares
 

@@ -57,6 +57,14 @@
       (throw err)
       ctx)))
 
+(defn queue
+  ([interceptors]
+   (queue empty-queue interceptors))
+  ([q interceptors]
+   (into (or q empty-queue)
+         (map p/interceptor)
+         interceptors)))
+
 (defn execute
   ([ctx]
    (-> ctx
@@ -65,7 +73,6 @@
        (complete)))
   ([ctx interceptors]
    (-> ctx
-       (assoc :exoscale.interceptor/queue (into empty-queue
-                                                (keep p/interceptor)
-                                                interceptors))
+       (assoc :exoscale.interceptor/queue
+              (queue interceptors))
        (execute))))
