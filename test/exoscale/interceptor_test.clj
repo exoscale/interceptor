@@ -239,3 +239,33 @@
 
       (is (instance? Exception (a/<!! (ixa/execute-chan start-ctx
                                                         [{:enter throwing}])))))))
+
+(deftest mixed-test
+  (let [a (fn [ctx]
+            (doto (a/promise-chan)
+              (a/offer! (update ctx :a inc))))
+        m (fn [ctx] (d/success-deferred (update ctx :a inc)))
+        q (fn [ctx] (q/success-future (update ctx :a inc)))]
+    (is (= 3 (:a (a/<!! (ixa/execute-chan {:a 0} [m q a])))))
+    (is (= 3 (:a @(ixm/execute-deferred {:a 0} [m q a]))))
+    (is (= 3 (:a @(ixq/execute-future {:a 0} [m q a]))))
+
+    ;; single type can just use execute
+    (is (= 3 (:a @(ix/execute {:a 0} [m m m]))))
+    (is (= 3 (:a @(ix/execute {:a 0} [q q q]))))
+    (is (= 3 (:a (a/<!! (ix/execute {:a 0} [a a a])))))
+
+    (is (thrown? Exception @(ix/execute {:a 0} [m throwing m])))
+    (is (thrown? Exception @(ix/execute {:a 0} [q throwing q])))
+
+    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [throwing m m])))
+    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [m throwing m])))
+    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [m m throwing])))
+
+    (is (thrown? Exception @(ixq/execute-future {:a 0} [throwing q q])))
+    (is (thrown? Exception @(ixq/execute-future {:a 0} [q throwing q])))
+    (is (thrown? Exception @(ixq/execute-future {:a 0} [q q throwing])))
+
+    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [a throwing a]))))
+    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [throwing a a]))))
+    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [a a throwing]))))))

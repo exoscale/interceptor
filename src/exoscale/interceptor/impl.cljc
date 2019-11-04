@@ -50,29 +50,28 @@
             recur)))))
 
 (defn complete
-  [ctx]
+  [ctx success error]
   (if (p/async? ctx)
-    (p/then ctx complete)
+    (p/then ctx #(complete % success error))
     (if-let [err (:exoscale.interceptor/error ctx)]
-      (throw err)
-      ctx)))
+      (error err)
+      (success ctx))))
 
 (defn queue
-  ([interceptors]
-   (queue empty-queue interceptors))
-  ([q interceptors]
-   (into (or q empty-queue)
-         (map p/interceptor)
-         interceptors)))
+  [q interceptors]
+  (into (or q empty-queue)
+        (map p/interceptor)
+        interceptors))
+
+(defn assoc-queue
+  [ctx interceptors]
+  (assoc ctx
+         :exoscale.interceptor/queue
+         (queue nil interceptors)))
 
 (defn execute
-  ([ctx]
-   (-> ctx
-       (enter)
-       (leave)
-       (complete)))
-  ([ctx interceptors]
-   (-> ctx
-       (assoc :exoscale.interceptor/queue
-              (queue interceptors))
-       (execute))))
+  [ctx success error]
+  (-> ctx
+      (enter)
+      (leave)
+      (complete success error)))

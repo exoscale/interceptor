@@ -66,9 +66,9 @@
   If the :error reaches the end of the stack without being handled,
   execute will throw it."
   ([ctx]
-   (impl/execute ctx))
+   (impl/execute ctx identity #(throw %)))
   ([ctx interceptors]
-   (impl/execute ctx interceptors)))
+   (execute (impl/assoc-queue ctx interceptors))))
 
 ;;; Error handling
 

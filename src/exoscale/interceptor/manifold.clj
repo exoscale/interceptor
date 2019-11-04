@@ -13,14 +13,10 @@
   "Like `exoscale.interceptor/execute` but ensures we always get a
   manifold.Deferred back"
   ([ctx interceptors]
-   (execute-deferred (assoc ctx
-                            :exoscale.interceptor/queue
-                            (impl/queue interceptors))))
+   (execute-deferred (impl/assoc-queue ctx interceptors)))
   ([ctx]
-   (try
-     (let [result (impl/execute ctx)]
-       (cond-> result
-         (not (d/deferred? result))
-         (d/success-deferred)))
-     (catch Exception e
-       (d/error-deferred e)))))
+   (let [d (d/deferred)]
+     (impl/execute ctx
+                   #(d/success! d %)
+                   #(d/error! d %))
+     d)))

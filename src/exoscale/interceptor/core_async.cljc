@@ -52,17 +52,9 @@
   "Like `exoscale.interceptor/execute` but ensures we always get a
   core.async channel back"
   ([ctx interceptors]
-   (execute-chan (assoc ctx
-                        :exoscale.interceptor/queue
-                        (impl/queue interceptors))))
+   (execute-chan (impl/assoc-queue ctx interceptors)))
   ([ctx]
-   (try
-     (let [result (impl/execute ctx)]
-       (if (channel? result)
-         result
-         (offer! (async/promise-chan)
-                 result)))
-
-     (catch #?(:clj Exception :cljs :default) e
-       (doto (async/promise-chan)
-         (async/offer! e))))))
+   (let [ch (async/promise-chan)
+         done #(async/offer! ch %)]
+     (impl/execute ctx done done)
+     ch)))
