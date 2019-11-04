@@ -183,7 +183,7 @@ You can imagine holding state/dependencies at that level too if that's
 something you desire (that's doable with context too).
 ## Api docs
 
-[![cljdoc badge](https://cljdoc.xyz/badge/exoscale/ex)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT) interceptor
+[![cljdoc badge](https://cljdoc.xyz/badge/exoscale/interceptor)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT) interceptor
 
 ## Installation
 
