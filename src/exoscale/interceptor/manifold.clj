@@ -11,8 +11,6 @@
   (catch [d f] (d/catch' d f)))
 
 (defn execute-deferred
-  "Like `exoscale.interceptor/execute` but ensures we always get a
-  manifild.Deferred back"
   ([ctx interceptors]
    (try
      (let [result (impl/execute ctx interceptors)]

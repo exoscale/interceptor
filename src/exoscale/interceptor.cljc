@@ -4,7 +4,7 @@
             [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.utils :as u]))
 
-(defrecord Interceptor [name enter leave error])
+(defrecord Interceptor [enter leave error])
 
 (extend-protocol p/Interceptor
   #?(:clj clojure.lang.IPersistentMap
@@ -140,17 +140,27 @@
 ;;; Manifold support
 
 (u/compile-when-available manifold.deferred
-  (def execute-deferred (requiring-resolve 'exoscale.interceptor.manifold/execute-deferred)))
+  (def execute-deferred
+    "Like `exoscale.interceptor/execute` but ensures we always get a
+  manifold.Deferred back"
+    (requiring-resolve 'exoscale.interceptor.manifold/execute-deferred)))
 
  ;;; Auspex/completablefuture support
 (u/compile-when-available qbits.auspex
-  (def execute-future (requiring-resolve 'exoscale.interceptor.auspex/execute-future)))
+  (def execute-future
+    "Like `exoscale.interceptor/execute` but ensures we always get a
+  CompletableFuture back"
+
+    (requiring-resolve 'exoscale.interceptor.auspex/execute-future)))
 
   ;;; Core async support
 (u/compile-when-available #?(:clj clojure.core.async
                              :cljs cljs.core.async)
   (require 'exoscale.interceptor.core-async)
-  (def execute-chan #'exoscale.interceptor.core-async/execute-chan))
+  (def execute-chan
+    "Like `exoscale.interceptor/execute` but ensures we always get a
+  core.async channel back"
+    exoscale.interceptor.core-async/execute-chan))
 
 
 
@@ -283,27 +293,27 @@
   )
 (comment
 
-(require '[clojure.core.async :as a] )
-(prn (a/<!! (execute-chan {} [(fn [ctx]
-                                (doto (a/promise-chan)
-                                  (a/offer! (assoc ctx :foo 1))))
-                              (fn [ctx]
-                                (doto (a/promise-chan)
-                                  (a/offer! (assoc ctx :foo 1))))
-                              (fn [ctx]
-                                (doto (a/promise-chan)
-                                  (a/offer! (assoc ctx :foo 1))))
+  (require '[clojure.core.async :as a] )
+  (prn (a/<!! (execute-chan {} [(fn [ctx]
+                                  (doto (a/promise-chan)
+                                    (a/offer! (assoc ctx :foo 1))))
+                                (fn [ctx]
+                                  (doto (a/promise-chan)
+                                    (a/offer! (assoc ctx :foo 1))))
+                                (fn [ctx]
+                                  (doto (a/promise-chan)
+                                    (a/offer! (assoc ctx :foo 1))))
 
-                              (fn [ctx]
-                                (doto (a/promise-chan)
-                                  (a/close!)))
+                                (fn [ctx]
+                                  (doto (a/promise-chan)
+                                    (a/close!)))
 
-                              {:error (fn [ctx e]                                        ctx)
-                               :enter
-                               (fn [ctx]
-                                 (prn :bar ctx)
-                                 (throw (ex-info "Boom" {}))
-                                 (doto (a/promise-chan)
-                                   (a/offer! (assoc ctx :bar 1))))}
-                              ])))
+                                {:error (fn [ctx e]                                        ctx)
+                                 :enter
+                                 (fn [ctx]
+                                   (prn :bar ctx)
+                                   (throw (ex-info "Boom" {}))
+                                   (doto (a/promise-chan)
+                                     (a/offer! (assoc ctx :bar 1))))}
+                                ])))
   )
