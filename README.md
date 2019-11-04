@@ -1,10 +1,17 @@
 # Interceptor
 
-The code/design is *heavily* inspired from
-pedestal.interceptor/sieparri.
+The design is *heavily* inspired from pedestal.interceptor & sieparri.
 
 It mimics pedestal interceptor behaviour, but adds async lib agnostic
 support with implementations for manifold/core.async/CompletableFuture.
+
+If you're familiar with pedestal it differs by removing suppressed,
+terminators, not wrapping errors at every throw level and not catching
+throwable.
+
+If you're familiar with sieparri it differs by not having a
+:request/:response backed in and following pedestal style error
+handling (modulo the difference mentioned earlier).
 
 ## How it works:
 
