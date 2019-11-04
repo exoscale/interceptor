@@ -62,8 +62,10 @@ with normal steps like it will work transparently.
 note: if you use the normal execute the first async interceptor in the
 chain will dict the return value type (if it starts with a deferred
 you get a deferred back). You can control the return values via
-`execute-deferred`, `execute-chan` and `execute-future` and they still
-allow you to mix internal steps with whatever lib you like/use.
+`exoscale.interceptor.manifold/execute-deferred`,
+`exoscale.interceptor.core-async/execute-chan` and
+`exoscale.interceptor.auspex/execute-future` and they still allow you
+to mix internal steps with whatever lib you like/use.
 
 ## Helpers
 
@@ -179,7 +181,13 @@ as normal ring handlers.
 
 You can imagine holding state/dependencies at that level too if that's
 something you desire (that's doable with context too).
+## Api docs
 
+[![cljdoc badge](https://cljdoc.xyz/badge/exoscale/ex)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT) interceptor
+
+## Installation
+
+[![Clojars Project](https://img.shields.io/clojars/v/exoscale/interceptor.svg)](https://clojars.org/interceptoroscale/interceptor)
 
 ## License
 
