@@ -3,22 +3,8 @@
 The code/design is *heavily* inspired from
 pedestal.interceptor/sieparri.
 
-It mimics pedestal interceptor behavior, but adds async lib agnostic
-support with a default manifold impl.
-
-Some minor differences with pedestal/sieparri:
-
-* no nested exceptions when :error handlers propagate, no error
-  wrapping either
-
-* cljs support
-
-* tiny codebase
-
-* less is more: no :suppressed, :bindings, :terminators
-
-* no handler, request/response, just context (it's easy to emulate
-  these)
+It mimics pedestal interceptor behaviour, but adds async lib agnostic
+support with implementations for manifold/core.async/CompletableFuture.
 
 ## How it works:
 
@@ -174,7 +160,7 @@ Interceptors creation is behind a protocol so if you keep writing the
 same "lenses" all the time you might be better of writing something
 tailored to your needs.
 
-For instance for an hypotetical interceptor type that would pull
+For instance for an hypothetical interceptor type that would pull
 from/to :request/:response in the context so you can just define them
 as normal ring handlers.
 

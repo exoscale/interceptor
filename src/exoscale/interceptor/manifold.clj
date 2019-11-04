@@ -1,6 +1,5 @@
 (ns exoscale.interceptor.manifold
   "Manifold support"
-  {:no-doc true}
   (:require [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.impl :as impl]
             [manifold.deferred :as d]))
@@ -11,6 +10,8 @@
   (catch [d f] (d/catch' d f)))
 
 (defn execute-deferred
+  "Like `exoscale.interceptor/execute` but ensures we always get a
+  manifold.Deferred back"
   ([ctx interceptors]
    (try
      (let [result (impl/execute ctx interceptors)]

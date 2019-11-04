@@ -1,38 +1,30 @@
 (ns exoscale.interceptor.core-async
   "core.async support"
-  {:no-doc true}
   (:require #?(:clj [clojure.core.async :as async]
                :cljs [cljs.core.async :as async])
-            [exoscale.interceptor.utils :as u]
             [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.impl :as impl]))
 
-(defmacro with-promise
-  [p & body]
-  `(let [~p (async/promise-chan)]
-     ~@body
-     ~p))
+(defn ^:no-doc exception?
+  [e]
+  (instance? #?(:clj Exception
+                :cljs js/Error)
+             e))
 
-(defn channel?
+(defn ^:no-doc channel?
   [x]
   (instance? #?(:clj clojure.core.async.impl.channels.ManyToManyChannel
                 :cljs cljs.core.async.impl.channels.ManyToManyChannel)
              x))
 
-(defn wrap
-  [x]
-  (cond-> x
-    (not (channel? x))
-    (async/promise-chan x)))
-
-(defn fmap
+(defn ^:no-doc fmap
   [ch f]
   (async/take! ch
                #(if (channel? %)
                   (fmap % f)
                   (f %))))
 
-(defn offer!
+(defn ^:no-doc offer!
   [ch x]
   (if x
     (async/offer! ch x)
@@ -43,18 +35,22 @@
   #?(:cljs cljs.core.async.impl.channels.ManyToManyChannel
      :clj clojure.core.async.impl.channels.ManyToManyChannel)
   (then [ch f]
-    (with-promise out-ch
-      (fmap ch #(offer! out-ch (f %)))))
+    (let [out-ch (async/promise-chan)]
+      (fmap ch #(offer! out-ch (f %)))
+      out-ch))
 
   (catch [ch f]
-    (with-promise out-ch
+    (let [out-ch (async/promise-chan)]
       (fmap ch
             #(offer! out-ch
                      (cond-> %
-                       (u/exception? %)
-                       (f %)))))))
+                       (exception? %)
+                       (f %))))
+      out-ch)))
 
 (defn execute-chan
+  "Like `exoscale.interceptor/execute` but ensures we always get a
+  core.async channel back"
   ([ctx interceptors]
    (try
      (let [result (impl/execute ctx interceptors)]

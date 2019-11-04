@@ -4,7 +4,8 @@
   :url "https://github.com/exoscale/interceptor"
   :dependencies [[org.clojure/clojure "1.10.1"]]
   :profiles {:dev
-             {:dependencies [[manifold "0.1.8"]
+             {:dependencies [[org.clojure/clojurescript "1.10.439"]
+                             [manifold "0.1.8"]
                              [org.clojure/core.async "0.4.500"]
                              [cc.qbits/auspex "0.1.0-alpha2"]]}}
   :pedantic? :warn
@@ -15,4 +16,4 @@
                   ["deploy" "clojars"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
-                  ["vcs" "push"]])
+                  ["vcs" "push"]]
