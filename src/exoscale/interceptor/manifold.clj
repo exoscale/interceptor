@@ -1,4 +1,6 @@
 (ns exoscale.interceptor.manifold
+  "Manifold support"
+  {:no-doc true}
   (:require [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.impl :as impl]
             [manifold.deferred :as d]))

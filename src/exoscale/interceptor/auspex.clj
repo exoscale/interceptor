@@ -1,4 +1,6 @@
 (ns exoscale.interceptor.auspex
+  "Auspex support"
+  {:no-doc true}
   (:require [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.impl :as impl]
             [qbits.auspex :as auspex]))

@@ -1,4 +1,6 @@
 (ns exoscale.interceptor.impl
+  "Core implementation"
+  {:no-doc true}
   (:require [exoscale.interceptor.protocols :as p]))
 
 ;;; Core api

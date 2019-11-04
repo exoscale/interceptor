@@ -1,6 +1,4 @@
-(ns exoscale.interceptor.protocols)
-
-;; Async implementers should also impl. IDerefs
+(ns exoscale.interceptor.protocols  )
 
 (defprotocol Async
   (then [x f])

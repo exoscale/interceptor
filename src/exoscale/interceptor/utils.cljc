@@ -1,4 +1,5 @@
-(ns exoscale.interceptor.utils)
+(ns exoscale.interceptor.utils
+  {:no-doc true})
 
 (defmacro compile-when-available
   "Evaluate `exp` and if it returns logical true and doesn't error, expand to

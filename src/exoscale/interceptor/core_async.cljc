@@ -1,4 +1,6 @@
 (ns exoscale.interceptor.core-async
+  "core.async support"
+  {:no-doc true}
   (:require #?(:clj [clojure.core.async :as async]
                :cljs [cljs.core.async :as async])
             [exoscale.interceptor.utils :as u]
