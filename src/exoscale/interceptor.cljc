@@ -1,5 +1,5 @@
 (ns exoscale.interceptor
-  (:refer-clojure :exclude [when throw])
+  (:refer-clojure :exclude [when])
   (:require [exoscale.interceptor.impl :as impl]
             [exoscale.interceptor.protocols :as p]))
 
