@@ -2,7 +2,35 @@
   "Core implementation"
   (:require [exoscale.interceptor.protocols :as p]))
 
-;;; Core api
+(defrecord Interceptor [enter leave error])
+
+(extend-protocol p/Interceptor
+  #?(:clj clojure.lang.IPersistentMap
+     :cljs cljs.core.PersistentHashMap)
+  (interceptor [m] (map->Interceptor m))
+
+  clojure.lang.IRecord
+  (interceptor [r] r)
+
+  #?(:clj clojure.lang.Fn
+     :cljs function)
+  (interceptor [f]
+    (p/interceptor {:enter f}))
+
+  clojure.lang.Keyword
+  (interceptor [f]
+    (p/interceptor {:enter f}))
+
+  clojure.lang.Var
+  (interceptor [v]
+    (p/interceptor (deref v))))
+
+;; not working in cljs for some reason
+#?(:clj
+   (extend-protocol p/Interceptor
+     clojure.lang.Symbol
+     (interceptor [s]
+       (p/interceptor (resolve s)))))
 
 (def empty-queue
   #?(:clj (clojure.lang.PersistentQueue/EMPTY)
