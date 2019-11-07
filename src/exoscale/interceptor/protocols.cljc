@@ -1,12 +1,12 @@
 (ns exoscale.interceptor.protocols  )
 
-(defprotocol Async
+(defprotocol AsyncContext
   (then [x f])
   (catch [x f]))
 
 (defn async?
   [x]
-  (satisfies? Async x))
+  (satisfies? AsyncContext x))
 
 (defprotocol Interceptor
   (interceptor [x] "Produces an interceptor from value"))

@@ -31,7 +31,7 @@
     (async/close! ch))
   ch)
 
-(extend-protocol p/Async
+(extend-protocol p/AsyncContext
   #?(:cljs cljs.core.async.impl.channels.ManyToManyChannel
      :clj clojure.core.async.impl.channels.ManyToManyChannel)
   (then [ch f]

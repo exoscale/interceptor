@@ -4,7 +4,7 @@
             [exoscale.interceptor.impl :as impl]
             [manifold.deferred :as d]))
 
-(extend-protocol p/Async
+(extend-protocol p/AsyncContext
   manifold.deferred.IDeferred
   (then [d f] (d/chain' d f))
   (catch [d f] (d/catch' d f)))

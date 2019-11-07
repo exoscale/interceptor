@@ -4,7 +4,7 @@
             [exoscale.interceptor.impl :as impl]
             [qbits.auspex :as auspex]))
 
-(extend-protocol p/Async
+(extend-protocol p/AsyncContext
   java.util.concurrent.CompletableFuture
   (then [d f] (auspex/chain d f))
   (catch [d f] (auspex/catch d f)))
