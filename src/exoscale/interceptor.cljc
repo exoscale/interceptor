@@ -36,7 +36,7 @@
   ([ctx]
    (impl/execute ctx identity #(throw %)))
   ([ctx interceptors]
-   (execute (impl/assoc-queue ctx interceptors))))
+   (execute (impl/init-ctx ctx interceptors))))
 
 ;;; Error handling
 

@@ -91,11 +91,12 @@
         (map p/interceptor)
         interceptors))
 
-(defn assoc-queue
+(defn init-ctx
   [ctx interceptors]
   (assoc ctx
          :exoscale.interceptor/queue
-         (queue nil interceptors)))
+         (queue nil interceptors)
+         :exoscale.interceptor/stack nil))
 
 (defn execute
   [ctx success error]

@@ -13,7 +13,7 @@
   "Like `exoscale.interceptor/execute` but ensures we always get a
   CompletableFuture back"
   ([ctx interceptors]
-   (execute-future (impl/assoc-queue ctx interceptors)))
+   (execute-future (impl/init-ctx ctx interceptors)))
 
   ([ctx]
    (let [fut (auspex/future)]
