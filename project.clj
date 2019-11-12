@@ -2,6 +2,7 @@
   :license {:name "ISC"}
   :url "https://github.com/exoscale/interceptor"
   :dependencies [[org.clojure/clojure "1.10.1"]]
+  :deploy-repositories [["snapshots" :clojars] ["releases" :clojars]]
   :profiles {:dev
              {:dependencies [[org.clojure/clojurescript "1.10.439"]
                              [manifold "0.1.8"]
