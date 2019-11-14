@@ -107,4 +107,7 @@
   "Run function for side-effects only and return context"
   [f]
   (fn [ctx]
-    (doto ctx f)))
+    (let [x (f ctx)]
+      (if (p/async? x)
+        (p/then x (constantly ctx))
+        ctx))))
