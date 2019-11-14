@@ -146,8 +146,45 @@
   (let [dinc {:enter (fn [ctx] (d/success-deferred (update ctx :a inc)))
               :leave (fn [ctx] (d/error-deferred ex))}]
     (is (thrown? Exception @(ixm/execute-deferred start-ctx
-                                                  [dinc])))))
+                                                  [dinc]))))
 
+  (is (= 4 @(ixm/execute-deferred {:a 1}
+                                  [(ix/lens inc [:a])
+                                   (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                                   (ix/out #(-> % :a inc) [:a])
+                                   :a])))
+
+  (is (thrown? clojure.lang.ExceptionInfo
+               @(ixm/execute-deferred {:a 1}
+                                      [(ix/lens inc [:a])
+                                       (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                                       (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
+                                       (ix/out #(-> % :a inc) [:a])
+                                       :a])))
+
+    (is (thrown? clojure.lang.ExceptionInfo
+               @(ixm/execute-deferred {:a 1}
+                                      [(ix/lens inc [:a])
+                                       (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                                       (ix/out #(throw (ex-info (str %) {})) [:a])
+                                       (ix/out #(-> % :a inc) [:a])
+                                       :a])))
+
+  (is (= 3
+         (:a @(ixm/execute-deferred {:a 1}
+                                 [(ix/lens inc [:a])
+                                  (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                                  {:error (fn [ctx err] (prn :err (ex-message err)) ctx)}
+                                  (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
+                                  (ix/out #(-> % :a inc) [:a])]))))
+
+  (is (= 3
+         (:a @(ixm/execute-deferred {:a 1}
+                                 [(ix/lens inc [:a])
+                                  (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                                  {:error (fn [ctx err] (prn :err (ex-message err)) ctx)}
+                                  (ix/out #(throw (ex-info (str %) {})) [:a])
+                                  (ix/out #(-> % :a inc) [:a])])))))
 
 (deftest auspex-test
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))

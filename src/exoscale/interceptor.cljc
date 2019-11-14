@@ -1,6 +1,7 @@
 (ns exoscale.interceptor
   (:refer-clojure :exclude [when])
-  (:require [exoscale.interceptor.impl :as impl]))
+  (:require [exoscale.interceptor.impl :as impl]
+            [exoscale.interceptor.protocols :as p]))
 
 ;;; API
 
@@ -81,7 +82,11 @@
   "Modifies interceptor function *return at* specified path"
   [f path]
   (fn [ctx]
-    (assoc-in ctx path (f ctx))))
+    (let [x (f ctx)]
+      (if (p/async? x)
+        (p/then (f ctx)
+                #(assoc-in ctx path %))
+        (assoc-in ctx path x)))))
 
 (defn when
   "Modifies interceptor function to only run on ctx if pred returns true'ish"
