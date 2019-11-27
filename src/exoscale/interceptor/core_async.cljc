@@ -48,11 +48,11 @@
                        (f %))))
       out-ch)))
 
-(defn execute-chan
+(defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   core.async channel back"
   ([ctx interceptors]
-   (execute-chan (impl/init-ctx ctx interceptors)))
+   (execute (impl/init-ctx ctx interceptors)))
   ([ctx]
    (let [ch (async/promise-chan)
          done #(async/offer! ch %)]

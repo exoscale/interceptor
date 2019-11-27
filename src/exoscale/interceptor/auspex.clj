@@ -9,7 +9,7 @@
   (then [d f] (auspex/chain d f))
   (catch [d f] (auspex/catch d f)))
 
-(defn execute-future
+(defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   CompletableFuture back"
   ([ctx interceptors]

@@ -9,11 +9,11 @@
   (then [d f] (d/chain' d f))
   (catch [d f] (d/catch' d f)))
 
-(defn execute-deferred
+(defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   manifold.Deferred back"
   ([ctx interceptors]
-   (execute-deferred (impl/init-ctx ctx interceptors)))
+   (execute (impl/init-ctx ctx interceptors)))
   ([ctx]
    (let [d (d/deferred)]
      (impl/execute ctx
