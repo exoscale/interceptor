@@ -141,21 +141,21 @@
                clean-ctx)))
 
     (is (= {}
-           (-> @(ixm/execute-deferred {} [])
+           (-> @(ixm/execute {} [])
                clean-ctx))))
   (let [dinc {:enter (fn [ctx] (d/success-deferred (update ctx :a inc)))
               :leave (fn [ctx] (d/error-deferred ex))}]
-    (is (thrown? Exception @(ixm/execute-deferred start-ctx
+    (is (thrown? Exception @(ixm/execute start-ctx
                                                   [dinc]))))
 
-  (is (= 4 @(ixm/execute-deferred {:a 1}
+  (is (= 4 @(ixm/execute {:a 1}
                                   [(ix/lens inc [:a])
                                    (ix/out #(d/success-deferred (-> % :a inc)) [:a])
                                    (ix/out #(-> % :a inc) [:a])
                                    :a])))
 
   (is (thrown? clojure.lang.ExceptionInfo
-               @(ixm/execute-deferred {:a 1}
+               @(ixm/execute {:a 1}
                                       [(ix/lens inc [:a])
                                        (ix/out #(d/success-deferred (-> % :a inc)) [:a])
                                        (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
@@ -163,7 +163,7 @@
                                        :a])))
 
     (is (thrown? clojure.lang.ExceptionInfo
-               @(ixm/execute-deferred {:a 1}
+               @(ixm/execute {:a 1}
                                       [(ix/lens inc [:a])
                                        (ix/out #(d/success-deferred (-> % :a inc)) [:a])
                                        (ix/out #(throw (ex-info (str %) {})) [:a])
@@ -171,18 +171,18 @@
                                        :a])))
 
   (is (= 3
-         (:a @(ixm/execute-deferred {:a 1}
+         (:a @(ixm/execute {:a 1}
                                  [(ix/lens inc [:a])
                                   (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                  {:error (fn [ctx err] (prn :err (ex-message err)) ctx)}
+                                  {:error (fn [ctx err] ctx)}
                                   (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
                                   (ix/out #(-> % :a inc) [:a])]))))
 
   (is (= 3
-         (:a @(ixm/execute-deferred {:a 1}
+         (:a @(ixm/execute {:a 1}
                                  [(ix/lens inc [:a])
                                   (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                  {:error (fn [ctx err] (prn :err (ex-message err)) ctx)}
+                                  {:error (fn [ctx err] ctx)}
                                   (ix/out #(throw (ex-info (str %) {})) [:a])
                                   (ix/out #(-> % :a inc) [:a])])))))
 
@@ -220,11 +220,11 @@
                clean-ctx)))
 
     (is (= {}
-           (-> @(ixq/execute-future {} [])
+           (-> @(ixq/execute {} [])
                clean-ctx))))
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
               :leave (fn [ctx] (q/error-future ex))}]
-    (is (thrown? Exception @(ixq/execute-future start-ctx
+    (is (thrown? Exception @(ixq/execute start-ctx
                                                 [dinc])))))
 
 (deftest core-async-test
@@ -241,40 +241,40 @@
                clean-ctx)))
 
     (is (= default-result
-           (-> (a/<!! (ixa/execute-chan start-ctx
+           (-> (a/<!! (ixa/execute start-ctx
                                         [dinc dinc iinc]))
                clean-ctx)))
 
     (is (= default-result
-           (-> (a/<!! (ixa/execute-chan start-ctx
+           (-> (a/<!! (ixa/execute start-ctx
                                         [dinc iinc dinc]))
                clean-ctx)))
 
     (is (= default-result
-           (-> (a/<!! (ixa/execute-chan start-ctx
+           (-> (a/<!! (ixa/execute start-ctx
                                         [iinc dinc dinc]))
                clean-ctx)))
 
     (is (= default-result
-           (-> (a/<!! (ixa/execute-chan start-ctx
+           (-> (a/<!! (ixa/execute start-ctx
                                         [dinc dinc dinc]))
                clean-ctx)))
 
     (is (= {:a 2 :b 2}
-           (-> (a/<!! (ixa/execute-chan start-ctx [dinc dinc]))
+           (-> (a/<!! (ixa/execute start-ctx [dinc dinc]))
                clean-ctx)))
 
     (is (= {}
-           (-> (a/<!! (ixa/execute-chan {} []))
+           (-> (a/<!! (ixa/execute {} []))
                clean-ctx)))
     (let [dinc {:enter (fn [ctx] (doto (a/promise-chan (a/offer! (update ctx :a inc)))))
                 :leave (fn [ctx]
                          (doto (a/promise-chan (a/offer! (ex-info "boom" {})))))}]
 
-      (is (instance? Exception (a/<!! (ixa/execute-chan start-ctx
+      (is (instance? Exception (a/<!! (ixa/execute start-ctx
                                                         [dinc]))))
 
-      (is (instance? Exception (a/<!! (ixa/execute-chan start-ctx
+      (is (instance? Exception (a/<!! (ixa/execute start-ctx
                                                         [{:enter throwing}])))))))
 
 (deftest mixed-test
@@ -283,9 +283,9 @@
               (a/offer! (update ctx :a inc))))
         m (fn [ctx] (d/success-deferred (update ctx :a inc)))
         q (fn [ctx] (q/success-future (update ctx :a inc)))]
-    (is (= 3 (:a (a/<!! (ixa/execute-chan {:a 0} [m q a])))))
-    (is (= 3 (:a @(ixm/execute-deferred {:a 0} [m q a]))))
-    (is (= 3 (:a @(ixq/execute-future {:a 0} [m q a]))))
+    (is (= 3 (:a (a/<!! (ixa/execute {:a 0} [m q a])))))
+    (is (= 3 (:a @(ixm/execute {:a 0} [m q a]))))
+    (is (= 3 (:a @(ixq/execute {:a 0} [m q a]))))
 
     ;; single type can just use execute
     (is (= 3 (:a @(ix/execute {:a 0} [m m m]))))
@@ -295,14 +295,14 @@
     (is (thrown? Exception @(ix/execute {:a 0} [m throwing m])))
     (is (thrown? Exception @(ix/execute {:a 0} [q throwing q])))
 
-    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [throwing m m])))
-    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [m throwing m])))
-    (is (thrown? Exception @(ixm/execute-deferred {:a 0} [m m throwing])))
+    (is (thrown? Exception @(ixm/execute {:a 0} [throwing m m])))
+    (is (thrown? Exception @(ixm/execute {:a 0} [m throwing m])))
+    (is (thrown? Exception @(ixm/execute {:a 0} [m m throwing])))
 
-    (is (thrown? Exception @(ixq/execute-future {:a 0} [throwing q q])))
-    (is (thrown? Exception @(ixq/execute-future {:a 0} [q throwing q])))
-    (is (thrown? Exception @(ixq/execute-future {:a 0} [q q throwing])))
+    (is (thrown? Exception @(ixq/execute {:a 0} [throwing q q])))
+    (is (thrown? Exception @(ixq/execute {:a 0} [q throwing q])))
+    (is (thrown? Exception @(ixq/execute {:a 0} [q q throwing])))
 
-    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [a throwing a]))))
-    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [throwing a a]))))
-    (is (instance? Exception (a/<!! (ixa/execute-chan {:a 0} [a a throwing]))))))
+    (is (instance? Exception (a/<!! (ixa/execute {:a 0} [a throwing a]))))
+    (is (instance? Exception (a/<!! (ixa/execute {:a 0} [throwing a a]))))
+    (is (instance? Exception (a/<!! (ixa/execute {:a 0} [a a throwing]))))))

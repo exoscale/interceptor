@@ -75,9 +75,9 @@ with normal steps like it will work transparently.
 note: if you use the normal execute the first async interceptor in the
 chain will dict the return value type (if it starts with a deferred
 you get a deferred back). You can control the return values via
-`exoscale.interceptor.manifold/execute-deferred`,
-`exoscale.interceptor.core-async/execute-chan` and
-`exoscale.interceptor.auspex/execute-future` and they still allow you
+`exoscale.interceptor.manifold/execute`,
+`exoscale.interceptor.core-async/execute` and
+`exoscale.interceptor.auspex/execute` and they still allow you
 to mix internal steps with whatever lib you like/use.
 
 ## Helpers
