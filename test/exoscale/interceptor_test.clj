@@ -24,7 +24,6 @@
 (def c {:enter #(update % :x conj :c)
         :leave #(update % :x conj :d)})
 
-
 (def start-ctx {:a 0 :b 0})
 (def default-result {:a 3 :b 3})
 (def ex (ex-info "boom" {}))
@@ -54,7 +53,6 @@
          (-> (ix/execute {})
              clean-ctx)))
 
-
   (is (= {:a 1 :b 2}
          (-> (ix/execute start-ctx
                          [iinc
@@ -71,6 +69,7 @@
 
 
   ;; test flow
+
 
   (let [ctx {:x []}]
     (is (= [:a :b :c] (ix/execute ctx [a b c :x]))))
@@ -146,45 +145,45 @@
   (let [dinc {:enter (fn [ctx] (d/success-deferred (update ctx :a inc)))
               :leave (fn [ctx] (d/error-deferred ex))}]
     (is (thrown? Exception @(ixm/execute start-ctx
-                                                  [dinc]))))
+                                         [dinc]))))
 
   (is (= 4 @(ixm/execute {:a 1}
-                                  [(ix/lens inc [:a])
-                                   (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                   (ix/out #(-> % :a inc) [:a])
-                                   :a])))
+                         [(ix/lens inc [:a])
+                          (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                          (ix/out #(-> % :a inc) [:a])
+                          :a])))
 
   (is (thrown? clojure.lang.ExceptionInfo
                @(ixm/execute {:a 1}
-                                      [(ix/lens inc [:a])
-                                       (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                       (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
-                                       (ix/out #(-> % :a inc) [:a])
-                                       :a])))
+                             [(ix/lens inc [:a])
+                              (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                              (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
+                              (ix/out #(-> % :a inc) [:a])
+                              :a])))
 
-    (is (thrown? clojure.lang.ExceptionInfo
+  (is (thrown? clojure.lang.ExceptionInfo
                @(ixm/execute {:a 1}
-                                      [(ix/lens inc [:a])
-                                       (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                       (ix/out #(throw (ex-info (str %) {})) [:a])
-                                       (ix/out #(-> % :a inc) [:a])
-                                       :a])))
+                             [(ix/lens inc [:a])
+                              (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                              (ix/out #(throw (ex-info (str %) {})) [:a])
+                              (ix/out #(-> % :a inc) [:a])
+                              :a])))
 
   (is (= 3
          (:a @(ixm/execute {:a 1}
-                                 [(ix/lens inc [:a])
-                                  (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                  {:error (fn [ctx err] ctx)}
-                                  (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
-                                  (ix/out #(-> % :a inc) [:a])]))))
+                           [(ix/lens inc [:a])
+                            (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                            {:error (fn [ctx err] ctx)}
+                            (ix/out #(d/error-deferred (ex-info (str %) {})) [:a])
+                            (ix/out #(-> % :a inc) [:a])]))))
 
   (is (= 3
          (:a @(ixm/execute {:a 1}
-                                 [(ix/lens inc [:a])
-                                  (ix/out #(d/success-deferred (-> % :a inc)) [:a])
-                                  {:error (fn [ctx err] ctx)}
-                                  (ix/out #(throw (ex-info (str %) {})) [:a])
-                                  (ix/out #(-> % :a inc) [:a])])))))
+                           [(ix/lens inc [:a])
+                            (ix/out #(d/success-deferred (-> % :a inc)) [:a])
+                            {:error (fn [ctx err] ctx)}
+                            (ix/out #(throw (ex-info (str %) {})) [:a])
+                            (ix/out #(-> % :a inc) [:a])])))))
 
 (deftest auspex-test
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
@@ -225,7 +224,7 @@
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
               :leave (fn [ctx] (q/error-future ex))}]
     (is (thrown? Exception @(ixq/execute start-ctx
-                                                [dinc])))))
+                                         [dinc])))))
 
 (deftest core-async-test
   (let [dinc {:enter (fn [ctx]
@@ -242,22 +241,22 @@
 
     (is (= default-result
            (-> (a/<!! (ixa/execute start-ctx
-                                        [dinc dinc iinc]))
+                                   [dinc dinc iinc]))
                clean-ctx)))
 
     (is (= default-result
            (-> (a/<!! (ixa/execute start-ctx
-                                        [dinc iinc dinc]))
+                                   [dinc iinc dinc]))
                clean-ctx)))
 
     (is (= default-result
            (-> (a/<!! (ixa/execute start-ctx
-                                        [iinc dinc dinc]))
+                                   [iinc dinc dinc]))
                clean-ctx)))
 
     (is (= default-result
            (-> (a/<!! (ixa/execute start-ctx
-                                        [dinc dinc dinc]))
+                                   [dinc dinc dinc]))
                clean-ctx)))
 
     (is (= {:a 2 :b 2}
@@ -272,10 +271,10 @@
                          (doto (a/promise-chan (a/offer! (ex-info "boom" {})))))}]
 
       (is (instance? Exception (a/<!! (ixa/execute start-ctx
-                                                        [dinc]))))
+                                                   [dinc]))))
 
       (is (instance? Exception (a/<!! (ixa/execute start-ctx
-                                                        [{:enter throwing}])))))))
+                                                   [{:enter throwing}])))))))
 
 (deftest mixed-test
   (let [a (fn [ctx]

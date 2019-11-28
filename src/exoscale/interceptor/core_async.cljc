@@ -40,19 +40,19 @@
       out-ch))
 
   (catch [ch f]
-    (let [out-ch (async/promise-chan)]
-      (fmap ch
-            #(offer! out-ch
-                     (cond-> %
-                       (exception? %)
-                       (f %))))
-      out-ch)))
+         (let [out-ch (async/promise-chan)]
+           (fmap ch
+                 #(offer! out-ch
+                          (cond-> %
+                            (exception? %)
+                            (f %))))
+           out-ch)))
 
 (defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   core.async channel back"
   ([ctx interceptors]
-   (execute (impl/init-ctx ctx interceptors)))
+   (execute (impl/enqueue ctx interceptors)))
   ([ctx]
    (let [ch (async/promise-chan)
          done #(async/offer! ch %)]

@@ -1,4 +1,4 @@
-(ns exoscale.interceptor.protocols  )
+(ns exoscale.interceptor.protocols)
 
 (defprotocol AsyncContext
   (then [x f])

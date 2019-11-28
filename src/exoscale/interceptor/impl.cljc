@@ -33,10 +33,10 @@
        (p/interceptor (resolve s)))))
 
 (def empty-queue
-  #?(:clj (clojure.lang.PersistentQueue/EMPTY)
+  #?(:clj clojure.lang.PersistentQueue/EMPTY
      :cljs #queue []))
 
-(defn run-stage
+(defn invoke-stage
   [ctx interceptor stage err]
   (if-let [f (get interceptor stage)]
     (try
@@ -56,10 +56,10 @@
     (let [stack (:exoscale.interceptor/stack ctx)]
       (if-let [interceptor (peek stack)]
         (recur (let [err (:exoscale.interceptor/error ctx)]
-                 (run-stage (assoc ctx :exoscale.interceptor/stack (pop stack))
-                            interceptor
-                            (if err :error :leave)
-                            err)))
+                 (invoke-stage (assoc ctx :exoscale.interceptor/stack (pop stack))
+                               interceptor
+                               (if err :error :leave)
+                               err)))
         ctx))))
 
 (defn enter [ctx]
@@ -74,7 +74,7 @@
         (-> (assoc ctx
                    :exoscale.interceptor/queue (pop queue)
                    :exoscale.interceptor/stack (conj stack interceptor))
-            (run-stage interceptor :enter nil)
+            (invoke-stage interceptor :enter nil)
             recur)))))
 
 (defn complete
@@ -85,18 +85,18 @@
       (error err)
       (success ctx))))
 
-(defn queue
+(defn into-queue
   [q interceptors]
   (into (or q empty-queue)
         (map p/interceptor)
         interceptors))
 
-(defn init-ctx
+(defn enqueue
   [ctx interceptors]
-  (assoc ctx
-         :exoscale.interceptor/queue
-         (queue nil interceptors)
-         :exoscale.interceptor/stack nil))
+  (update ctx
+          :exoscale.interceptor/queue
+          into-queue
+          interceptors))
 
 (defn execute
   [ctx success error]

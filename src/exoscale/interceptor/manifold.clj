@@ -13,7 +13,7 @@
   "Like `exoscale.interceptor/execute` but ensures we always get a
   manifold.Deferred back"
   ([ctx interceptors]
-   (execute (impl/init-ctx ctx interceptors)))
+   (execute (impl/enqueue ctx interceptors)))
   ([ctx]
    (let [d (d/deferred)]
      (impl/execute ctx
