@@ -8,16 +8,20 @@ usage and the core of the concept being around hundred lines we
 decided to roll our own, with its own specificities.
 
 It mimics pedestal interceptor behaviour, but adds async lib agnostic
-support with implementations for
-manifold/core.async/CompletableFuture. It differs from pedestal by
-removing suppressed, terminators, not wrapping errors at every throw
-level and not catching throwable.
+support with implementations for `manifold`, `core.async`, `CompletableFuture`.
 
-If you're familiar with sieparri it differs by following pedestal
-style error handling instead (modulo wrapping/rethrowing) and by not
-having a :request/:response backed in, we just have context in ->
-context out, or whatever you call as termination, from there we think
-you can emulate other usage patterns more easily.
+It differs from pedestal by removing suppressed, terminators, not
+wrapping errors at every throw level and not catching
+throwable. Pedestal implementation much larger and deeply tied to
+core.async.
+
+If you're familiar with sieparri our library differs by following
+pedestal style error handling instead (modulo wrapping/rethrowing) and
+by not having a `:request`/`:response` backed in, we just have context
+in -> context out, or whatever you call as termination, from there we
+think you can emulate other usage patterns more easily. Sieparri also
+differs in a few way at the API level to accomodate the its usage
+goals but these are minor differences.
 
 ## How it works:
 
@@ -194,6 +198,7 @@ as normal ring handlers.
 
 You can imagine holding state/dependencies at that level too if that's
 something you desire (that's doable with context too).
+
 ## Api docs
 
 [![cljdoc badge](https://cljdoc.xyz/badge/exoscale/interceptor)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT)
