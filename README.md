@@ -12,8 +12,8 @@ support with implementations for `manifold`, `core.async`, `CompletableFuture`.
 
 It differs from pedestal by removing suppressed, terminators, not
 wrapping errors at every throw level and not catching
-throwable. Pedestal implementation much larger and deeply tied to
-core.async.
+throwable. Pedestal implementation is also much larger and deeply tied
+to core.async.
 
 If you're familiar with sieparri our library differs by following
 pedestal style error handling instead (modulo wrapping/rethrowing) and
