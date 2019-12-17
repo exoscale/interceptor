@@ -1,5 +1,7 @@
 # Interceptor
 
+![ex](dominos.jpg)
+
 The design is *heavily* inspired by
 [pedestal.interceptor](http://pedestal.io/reference/interceptors) &
 [sieparri](https://github.com/metosin/sieppari), both excellent libraries.
@@ -9,7 +11,6 @@ decided to roll our own, with its own specificities.
 
 It mimics pedestal interceptor behaviour, but adds async lib agnostic
 support with implementations for `manifold`, `core.async`, `CompletableFuture`.
-
 It differs from pedestal by removing suppressed, terminators, not
 wrapping errors at every throw level and not catching
 throwable. Pedestal implementation is also much larger and deeply tied
