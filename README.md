@@ -207,3 +207,8 @@ something you desire (that's doable with context too).
 ## Installation
 
 [![Clojars Project](https://img.shields.io/clojars/v/exoscale/interceptor.svg)](https://clojars.org/exoscale/interceptor)
+
+## logo
+
+Logo is cc licensed https://creativecommons.org/licenses/by/2.0/legalcode
+The author is "mckinney75402" https://www.flickr.com/photos/30791749@N07/
