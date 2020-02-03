@@ -85,7 +85,7 @@
   (fn [ctx]
     (let [x (f ctx)]
       (if (p/async? x)
-        (p/then (f ctx)
+        (p/then x
                 #(assoc-in ctx path %))
         (assoc-in ctx path x)))))
 

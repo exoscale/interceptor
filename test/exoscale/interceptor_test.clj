@@ -305,3 +305,15 @@
     (is (instance? Exception (a/<!! (ixa/execute {:a 0} [a throwing a]))))
     (is (instance? Exception (a/<!! (ixa/execute {:a 0} [throwing a a]))))
     (is (instance? Exception (a/<!! (ixa/execute {:a 0} [a a throwing]))))))
+
+
+(deftest out-test
+  (let [counter      (atom 0)
+        deferred-inc (fn [arg]                      
+                       (swap! counter inc)
+                       (d/success-deferred (-> arg :a inc)))]
+    
+    (is (= 2 @(ixm/execute {:a 1}
+                           [(ix/out deferred-inc [:a])
+                            :a])))
+    (is (= 1 @counter))))
