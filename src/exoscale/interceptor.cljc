@@ -116,4 +116,4 @@
 (defn discard
   "Run function for side-effects only and return context"
   [f]
-  (then f (fn [ctx _] (constantly ctx))))
+  (then f (fn [ctx _] ctx)))

@@ -183,7 +183,11 @@
                             (ix/out #(d/success-deferred (-> % :a inc)) [:a])
                             {:error (fn [ctx err] ctx)}
                             (ix/out #(throw (ex-info (str %) {})) [:a])
-                            (ix/out #(-> % :a inc) [:a])])))))
+                            (ix/out #(-> % :a inc) [:a])]))))
+
+  (is (= 42 (ix/execute {:a 42}
+                        [(ix/discard (fn [ctx] (assoc ctx :a 43)))
+                         :a]))))
 
 (deftest auspex-test
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
