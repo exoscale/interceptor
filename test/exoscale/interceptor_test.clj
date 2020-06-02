@@ -309,11 +309,33 @@
 
 (deftest out-test
   (let [counter      (atom 0)
-        deferred-inc (fn [arg]                      
+        deferred-inc (fn [arg]
                        (swap! counter inc)
                        (d/success-deferred (-> arg :a inc)))]
-    
+
     (is (= 2 @(ixm/execute {:a 1}
                            [(ix/out deferred-inc [:a])
                             :a])))
     (is (= 1 @counter))))
+
+(deftest then-test
+  (is (= {:a 1 :b 2 :c 3}
+         (-> @(ix/execute {:a 1}
+                       [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
+                                    (ix/then (fn [ctx x] (merge ctx x {:b 2}))))}])
+             (select-keys [:a :b :c]))))
+  (is (= {:a 1 :b 2 :c 3}
+         (-> (ix/execute {:a 1}
+                         [{:enter (-> (fn [ctx] (assoc ctx :c 3))
+                                      (ix/then (fn [ctx x] (merge ctx x {:b 2}))))}])
+             (select-keys [:a :b :c]))))
+  (is (= {:a 1 :b 2 :c 3 :d 4 :e 5 :f 6 :g 7}
+         (-> @(ix/execute {:a 1}
+                          [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
+                                       (ix/then (fn [ctx x] (merge ctx x {:b 2})))
+                                       (ix/then (fn [ctx x] (merge ctx x {:d 4})))
+                                       (ix/then (fn [ctx x] (d/success-deferred (merge ctx x {:e 5}))))
+                                       (ix/then (fn [ctx x] (d/success-deferred (merge ctx x {:f 6})))))}
+                           ;; just to make sure we preserve chaining
+                           {:enter (fn [ctx] (assoc ctx :g 7))}])
+             (select-keys [:a :b :c :d :e :f :g])))))
