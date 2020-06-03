@@ -183,7 +183,11 @@
                             (ix/out #(d/success-deferred (-> % :a inc)) [:a])
                             {:error (fn [ctx err] ctx)}
                             (ix/out #(throw (ex-info (str %) {})) [:a])
-                            (ix/out #(-> % :a inc) [:a])])))))
+                            (ix/out #(-> % :a inc) [:a])]))))
+
+  (is (= 42 (ix/execute {:a 42}
+                        [(ix/discard (fn [ctx] (assoc ctx :a 43)))
+                         :a]))))
 
 (deftest auspex-test
   (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
@@ -309,11 +313,33 @@
 
 (deftest out-test
   (let [counter      (atom 0)
-        deferred-inc (fn [arg]                      
+        deferred-inc (fn [arg]
                        (swap! counter inc)
                        (d/success-deferred (-> arg :a inc)))]
-    
+
     (is (= 2 @(ixm/execute {:a 1}
                            [(ix/out deferred-inc [:a])
                             :a])))
     (is (= 1 @counter))))
+
+(deftest transform-test
+  (is (= {:a 1 :b 2 :c 3}
+         (-> @(ix/execute {:a 1}
+                       [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
+                                    (ix/transform (fn [ctx x] (merge ctx x {:b 2}))))}])
+             (select-keys [:a :b :c]))))
+  (is (= {:a 1 :b 2 :c 3}
+         (-> (ix/execute {:a 1}
+                         [{:enter (-> (fn [ctx] (assoc ctx :c 3))
+                                      (ix/transform (fn [ctx x] (merge ctx x {:b 2}))))}])
+             (select-keys [:a :b :c]))))
+  (is (= {:a 1 :b 2 :c 3 :d 4 :e 5 :f 6 :g 7}
+         (-> @(ix/execute {:a 1}
+                          [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
+                                       (ix/transform (fn [ctx x] (merge ctx x {:b 2})))
+                                       (ix/transform (fn [ctx x] (merge ctx x {:d 4})))
+                                       (ix/transform (fn [ctx x] (d/success-deferred (merge ctx x {:e 5}))))
+                                       (ix/transform (fn [ctx x] (d/success-deferred (merge ctx x {:f 6})))))}
+                           ;; just to make sure we preserve chaining
+                           {:enter (fn [ctx] (assoc ctx :g 7))}])
+             (select-keys [:a :b :c :d :e :f :g])))))

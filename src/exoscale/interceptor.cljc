@@ -71,7 +71,21 @@
   [ctx interceptors]
   (impl/enqueue ctx interceptors))
 
-;;; helpers/middlwares
+;;; helpers/middlewares
+
+(defn transform
+  "Takes stage function, and wraps it with callback that will return a
+  new context from the application of `f'` onto it. It can be useful
+  to run a separate function after a stage returns and apply some
+  transformation to it relative to the original context. `f'` takes
+  the *initial* stage context and `f` realized return value as
+  arguments."
+  [f f']
+  (fn [ctx]
+    (let [x (f ctx)]
+      (if (p/async? x)
+        (p/then x #(f' ctx %))
+        (f' ctx x)))))
 
 (defn in
   "Modifies interceptor stage to *take in* specified path"
@@ -82,12 +96,7 @@
 (defn out
   "Modifies interceptor stage to *return at* specified path"
   [f path]
-  (fn [ctx]
-    (let [x (f ctx)]
-      (if (p/async? x)
-        (p/then x
-                #(assoc-in ctx path %))
-        (assoc-in ctx path x)))))
+  (transform f #(assoc-in %1 path %2)))
 
 (defn when
   "Modifies interceptor stage to only run on ctx if pred returns true'ish"
@@ -107,8 +116,4 @@
 (defn discard
   "Run function for side-effects only and return context"
   [f]
-  (fn [ctx]
-    (let [x (f ctx)]
-      (if (p/async? x)
-        (p/then x (constantly ctx))
-        ctx))))
+  (transform f (fn [ctx _] ctx)))
