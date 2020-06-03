@@ -73,7 +73,7 @@
 
 ;;; helpers/middlewares
 
-(defn then
+(defn transform
   "Takes stage function, and wraps it with callback that will return a
   new context from the application of `f'` onto it. It can be useful
   to run a separate function after a stage returns and apply some
@@ -84,7 +84,7 @@
   (fn [ctx]
     (let [x (f ctx)]
       (if (p/async? x)
-        (p/then x #(f'  ctx %))
+        (p/then x #(f' ctx %))
         (f' ctx x)))))
 
 (defn in
@@ -96,7 +96,7 @@
 (defn out
   "Modifies interceptor stage to *return at* specified path"
   [f path]
-  (then f #(assoc-in %1 path %2)))
+  (transform f #(assoc-in %1 path %2)))
 
 (defn when
   "Modifies interceptor stage to only run on ctx if pred returns true'ish"
@@ -116,4 +116,4 @@
 (defn discard
   "Run function for side-effects only and return context"
   [f]
-  (then f (fn [ctx _] ctx)))
+  (transform f (fn [ctx _] ctx)))
