@@ -1,7 +1,9 @@
 (ns exoscale.interceptor
   (:refer-clojure :exclude [when])
   (:require [exoscale.interceptor.impl :as impl]
-            [exoscale.interceptor.protocols :as p]))
+            [exoscale.interceptor.protocols :as p]
+            #?(:clj  [clojure.tools.logging :refer [debug debugf]])
+            #?(:cljs [exoscale.interceptor.nop-logger :refer [debug debugf]])))
 
 ;;; API
 

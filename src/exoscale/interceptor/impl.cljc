@@ -1,8 +1,14 @@
 (ns ^:no-doc exoscale.interceptor.impl
   "Core implementation"
-  (:require [exoscale.interceptor.protocols :as p]))
+  (:require [exoscale.interceptor.protocols :as p]
+            #?(:clj [clojure.tools.logging :refer [debug debugf tracef]])
+            #?(:cljs [exoscale.interceptor.nop-logger :refer [debug debugf tracef]])))
 
-(defrecord Interceptor [enter leave error])
+(defn- ctime-millis []
+  #?(:clj (System/currentTimeMillis)
+     :cljs (. (js/Date.) (getTime))))
+
+(defrecord Interceptor [name enter leave error])
 
 (extend-protocol p/Interceptor
   #?(:clj clojure.lang.IPersistentMap
@@ -38,17 +44,22 @@
 
 (defn invoke-stage
   [ctx interceptor stage err]
-  (if-let [f (get interceptor stage)]
-    (try
-      (let [ctx' (if err
-                   (f (dissoc ctx :exoscale.interceptor/error) err)
-                   (f ctx))]
-        (cond-> ctx'
-          (p/async? ctx')
-          (p/catch (fn [e] (assoc ctx :exoscale.interceptor/error e)))))
-      (catch #?(:clj Exception :cljs :default) e
-        (assoc ctx :exoscale.interceptor/error e)))
-    ctx))
+  (let [now    (ctime-millis)
+        ixname (or (:name interceptor) "<unnamed>")]
+    (if-let [f (get interceptor stage)]
+      (try
+        (debugf "Invoking stage %s of interceptor %s" stage ixname)
+        (let [ctx' (if err
+                     (f (dissoc ctx :exoscale.interceptor/error) err)
+                     (f ctx))]
+          (cond-> ctx'
+                  (p/async? ctx')
+                  (p/catch (fn [e] (assoc ctx :exoscale.interceptor/error e)))))
+        (catch #?(:clj Exception :cljs :default) e
+          (assoc ctx :exoscale.interceptor/error e))
+        (finally
+          (tracef "Stage '%s' for interceptor '%s' took %dms" stage ixname (- (ctime-millis) now))))
+      ctx)))
 
 (defn leave [ctx]
   (if (p/async? ctx)

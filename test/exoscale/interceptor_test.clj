@@ -8,7 +8,8 @@
             [qbits.auspex :as q]
             [clojure.core.async :as a]))
 
-(def iinc {:error (fn [ctx err]
+(def iinc {:name "iinc"
+           :error (fn [ctx err]
                     ctx)
            :enter (fn [ctx]
                     (update ctx :a inc))
@@ -343,3 +344,4 @@
                            ;; just to make sure we preserve chaining
                            {:enter (fn [ctx] (assoc ctx :g 7))}])
              (select-keys [:a :b :c :d :e :f :g])))))
+
