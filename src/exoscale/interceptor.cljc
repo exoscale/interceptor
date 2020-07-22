@@ -79,11 +79,17 @@
   [f {:keys [before after]
       :or {before identity
            after identity}}]
-  (fn [ctx]
-    (let [x (f (before ctx))]
-      (if (p/async? x)
-        (p/then x #(after %))
-        (after x)))))
+  (fn
+    ([ctx]
+     (let [x (f (before ctx))]
+       (if (p/async? x)
+         (p/then x #(after %))
+         (after x))))
+    ([ctx err]
+     (let [x (f (before ctx) err)]
+       (if (p/async? x)
+         (p/then x #(after %))
+         (after x))))))
 
 (defn before
   "Wraps stage fn with another one"

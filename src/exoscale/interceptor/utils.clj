@@ -6,33 +6,24 @@
 
 (defn- time-as
   [k]
-  (fn [ctx] (assoc ctx k (java.time.Instant/now))))
+  (fn [ctx] (assoc ctx (into [::timer] k) (java.time.Instant/now))))
 
 (defn with-timer
   "Wrap every stage on every interceptor in a chain with timers"
   [chain]
   (into []
         (comp (map p/interceptor)
-              (map (fn [{:as ix :keys [enter leave error name]
+              (map (fn [{:as ix :keys [name]
                          :or {name ix}}]
-                     (cond-> ix
-                       (ifn? enter)
-                       (assoc :enter
-                              (ix/wrap enter
-                                       {:before (time-as [name ::enter ::start])
-                                        :after (time-as [name ::enter ::end])}))
-
-                       (ifn? leave)
-                       (assoc :leave
-                              (ix/wrap leave
-                                       {:before (time-as [name ::leave ::start])
-                                        :after (time-as [name ::leave ::end])}))
-
-                       (ifn? error)
-                       (assoc :error
-                              (ix/wrap error
-                                       {:before (time-as [name ::error ::start])
-                                        :after (time-as [name ::error ::end])}))))))
+                     (reduce (fn [ix k]
+                               (if-let [stage (get ix k)]
+                                 (assoc ix k
+                                        (ix/wrap stage
+                                                 {:before (time-as [name k :start])
+                                                  :after (time-as [name k :end])}))
+                                 ix))
+                             ix
+                             [:enter :leave :error]))))
         chain))
 
 (defn- log-as
@@ -40,7 +31,8 @@
       :or {level :debug
            fmt (fn [ctx k] k)}}]
   (fn [ctx]
-    (log/ level (fmt ctx k))
+    (log/log level (fmt ctx k))
+    ;; (prn :LOG level (fmt ctx k))
     ctx))
 
 (defn with-log
@@ -48,32 +40,36 @@
   ([chain opts]
    (into []
          (comp (map p/interceptor)
-               (map (fn [{:as ix :keys [enter leave error name]
-                          :or {name ix}}]
-                      (cond-> ix
-                        (ifn? enter)
-                        (assoc :enter
-                               (ix/wrap enter
-                                        {:before (log-as [name ::enter] opts)
-                                         :after (log-as [name ::enter] opts)}))
-
-                        (ifn? leave)
-                        (assoc :leave
-                               (ix/wrap leave
-                                        {:before (log-as [name ::leave] opts)
-                                         :after (log-as [name ::leave] opts)}))
-
-                        (ifn? error)
-                        (assoc :error
-                               (ix/wrap error
-                                        {:before (log-as [name ::error] opts)
-                                         :after (log-as [name ::error] opts)}))))))
+               (map (fn [{:as ix :keys [name]
+                         :or {name ix}}]
+                     (reduce (fn [ix k]
+                               (if-let [stage (get ix k)]
+                                 (assoc ix k
+                                        (ix/wrap stage
+                                                 {:before (log-as [name k :start] opts)
+                                                  :after (log-as [name k :end] opts)}))
+                                 ix))
+                             [:enter :leave :error]))))
          chain)))
 
-(do
-  (def inc-a (fn [ctx] (update ctx :a inc)))
-  (def inc-b #'inc-a)
-  (def inc-c #'inc-a)
-  (prn  (ix/execute {:a 1} (-> [inc-a inc-b inc-c]
-                               (with-timer)
-                               (with-log)))))
+#_(do
+  ;; (prn :foo)
+  (def inc-a {:enter (fn [ctx]
+                       ;; (throw (ex-info "boom" {}))
+                       (update ctx :a inc)
+                       )
+              :leave nil
+              :error (fn [ctx err] ctx)})
+  (def inc-b (assoc inc-a :name ::b))
+  (def inc-c (assoc inc-a :name ::c))
+  (ix/execute {:a 1}
+              (-> [inc-a inc-b inc-c]
+                  (with-log {:fmt (fn [ctx k]
+                                    ;; (str (into [::timer] k))
+                                    k
+                                    ;; (str k "/timer:"
+                                    ;;      (get-in ctx (into [::timer] k)))
+                                    )})
+                  (with-timer)
+
+                  )))
