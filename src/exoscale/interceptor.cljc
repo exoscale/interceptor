@@ -73,6 +73,28 @@
 
 ;;; helpers/middlewares
 
+(defn wrap
+  "Runs `before` before the stage function runs, then `after` before we
+  return the new modified context"
+  [f {:keys [before after]
+      :or {before identity
+           after identity}}]
+  (fn [ctx]
+    (let [x (f (before ctx))]
+      (if (p/async? x)
+        (p/then x #(after %))
+        (after x)))))
+
+(defn before
+  "Wraps stage fn with another one"
+  [f before-f]
+  (wrap f {:before before-f}))
+
+(defn after
+  "Modifies context after stage function ran"
+  [f before-f]
+  (wrap f {:after before-f}))
+
 (defn transform
   "Takes stage function, and wraps it with callback that will return a
   new context from the application of `f'` onto it. It can be useful
