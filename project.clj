@@ -7,7 +7,8 @@
              {:dependencies [[org.clojure/clojurescript "1.10.439"]
                              [manifold "0.1.8"]
                              [org.clojure/core.async "0.4.500"]
-                             [cc.qbits/auspex "0.1.0-alpha2"]]
+                             [cc.qbits/auspex "0.1.0-alpha2"]
+                             [org.clojure/tools.logging "1.1.0"]]
               :plugins [[lein-cljsbuild "1.1.7"]]
 
               :cljsbuild {:builds
