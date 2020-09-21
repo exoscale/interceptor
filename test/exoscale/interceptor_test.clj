@@ -6,7 +6,8 @@
             [exoscale.interceptor.auspex :as ixq]
             [manifold.deferred :as d]
             [qbits.auspex :as q]
-            [clojure.core.async :as a]))
+            [clojure.core.async :as a])
+  (:import (java.util.concurrent CompletableFuture)))
 
 (def iinc {:error (fn [ctx err]
                     ctx)
@@ -109,6 +110,11 @@
 (deftest manifold-test
   (let [dinc {:enter (fn [ctx] (d/success-deferred (update ctx :a inc)))
               :leave (fn [ctx] (d/success-deferred (update ctx :b inc)))}]
+
+    (testing "CompletableFutures implement AsyncContext"
+      (is (= 1 @(ix/execute {} [(constantly (CompletableFuture/completedFuture 1))])))
+
+      (is (thrown? IllegalArgumentException @(ix/execute {} (constantly (CompletableFuture/failedFuture (IllegalArgumentException. "failed")))))))
 
     (is (= default-result
            (-> @(ix/execute start-ctx

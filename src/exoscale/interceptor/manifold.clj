@@ -2,10 +2,16 @@
   "Manifold support"
   (:require [exoscale.interceptor.protocols :as p]
             [exoscale.interceptor.impl :as impl]
-            [manifold.deferred :as d]))
+            [manifold.deferred :as d])
+  (:import (java.util.concurrent CompletableFuture)))
 
 (extend-protocol p/AsyncContext
   manifold.deferred.IDeferred
+  (then [d f] (d/chain' d f))
+  (catch [d f] (d/catch' d f)))
+
+(extend-protocol p/AsyncContext
+  CompletableFuture
   (then [d f] (d/chain' d f))
   (catch [d f] (d/catch' d f)))
 
