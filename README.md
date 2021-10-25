@@ -200,6 +200,24 @@ as normal ring handlers.
 You can imagine holding state/dependencies at that level too if that's
 something you desire (that's doable with context too).
 
+## Interceptor stage middleware
+
+In some cases it may be useful to wrap every individual stage function
+invocation in a transform.  Use-cases include debugging while in a
+test or dev environment, or the addition of logging and tracing on
+every interceptor step.
+
+Interceptor handles this at the context layer instead of the individual
+interceptor layer, an `:exoscale.interceptor/middleware` may be specified
+to perform the intermediate handling. It should be a function of one
+argument, the interceptor stage function.
+
+``` clj
+(defn ix-debug [f] (fn [ctx] (prn ctx) (f ctx)))
+(execute {:a 0 :exoscale.interceptor/middleware ix-debug} {:name :foo :enter #(update % :a inc)})
+```
+
+
 ## Api docs
 
 [![cljdoc badge](https://cljdoc.xyz/badge/exoscale/interceptor)](https://cljdoc.xyz/d/exoscale/interceptor/CURRENT)

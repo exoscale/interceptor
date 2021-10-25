@@ -85,10 +85,18 @@
       (error err)
       (success ctx))))
 
+(defn apply-middleware
+  [{:keys [enter leave] :as ix} {:exoscale.interceptor/keys [middleware] :as ctx}]
+  (cond-> ix
+    (some? enter) (update :enter middleware ctx)
+    (some? leave) (update :leave middleware ctx)))
+
 (defn into-queue
-  [q interceptors]
+  [q ctx interceptors]
   (into (or q empty-queue)
-        (map p/interceptor)
+        (map #(cond-> (p/interceptor %)
+                (some? (:exoscale.interceptor/middleware ctx))
+                (apply-middleware ctx)))
         interceptors))
 
 (defn enqueue
@@ -96,6 +104,7 @@
   (update ctx
           :exoscale.interceptor/queue
           into-queue
+          ctx
           interceptors))
 
 (defn execute
