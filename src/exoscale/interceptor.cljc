@@ -146,7 +146,8 @@
      (let [x (cond-> ctx (ifn? before) (before err))]
        (if (p/async? x)
          (cond-> x
-           (ifn? after) (p/then #(after % err)))
+           (ifn? after)
+           (p/then #(after % err)))
          (cond-> x
            (ifn? after)
            (after err)))))))
@@ -175,7 +176,7 @@
   interceptor and `:stage` to indicate which stage we're at (enter,
   leave or error).
 
-  `(into-chain [...] [:enter :error] (fn [f execution-ctx] (after-stage f (fn [...] ...))))"
+  `(into-chain [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage f (fn [...] ...))))"
   [chain stages f]
   (into []
         (comp (map p/interceptor)
