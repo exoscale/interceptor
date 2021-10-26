@@ -169,7 +169,9 @@
   has to be used for all stage types. The execution context will
   contain an `:interceptor` key with the value for the current
   interceptor and `:stage` to indicate which stage we're at (enter,
-  leave or error)."
+  leave or error).
+
+  `(into-chain [...] [:enter :error] (fn [f execution-ctx] (after-stage f (fn [...] ...))))"
   [chain stages f]
   (into []
         (comp (map p/interceptor)
