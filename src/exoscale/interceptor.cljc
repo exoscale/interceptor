@@ -119,6 +119,10 @@
   (transform f (fn [ctx _] ctx)))
 
 
+(defn current-stage
+  [ctx]
+  )
+
 ;;; stage middlewares
 
 (defn wrap-stage
@@ -185,11 +189,3 @@
                              ix
                              stages))))
         chain))
-
-;; (defn log-chain-execution
-;;   [chain]
-;;   (into-stages chain
-;;                [:enter :leave :error]
-;;                (wrap-stage {:before (fn ([ctx] (prn :)))})
-;;                )
-;;   )
