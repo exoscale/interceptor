@@ -124,7 +124,9 @@
 (defn wrap-stage
   "Runs `before` before the stage function runs, then `after` before we
   return the new modified context, takes the same arg as a potential
-  stage, so either 1 or 2 depending on enter/leave or error stages."
+  stage, so either 1 or 2 depending on `enter`/`leave` or `error`
+  stages. The `before` `after` fns can return any valid ctx
+  value (they are sync/async agnostic)"
   [f {:keys [before after]}]
   (fn
     ([ctx]
