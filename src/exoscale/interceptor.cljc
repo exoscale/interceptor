@@ -117,3 +117,55 @@
   "Run function for side-effects only and return context"
   [f]
   (transform f (fn [ctx _] ctx)))
+
+
+;;; stage middlewares
+
+(defn wrap-stage
+  "Runs `before` before the stage function runs, then `after` before we
+  return the new modified context, takes the same arg as a potential
+  stage, so either 1 or 2 depending on enter/leave or error stages."
+  [f {:keys [before after]}]
+  (fn
+    ([ctx]
+     (let [x (f (cond-> ctx (ifn? before) before))]
+       (if (p/async? x)
+         (cond-> x
+           (ifn? after) (p/then #(after %)))
+         (cond-> x
+           (ifn? after)
+           after))))
+    ([ctx err]
+     (let [x (cond-> ctx (ifn? before) (before err))]
+       (if (p/async? x)
+         (cond-> x
+           (ifn? after) (p/then #(after % err)))
+         (cond-> x
+           (ifn? after)
+           (after err)))))))
+
+(defn before-stage
+  "Wraps stage fn with another one"
+  [f before-f]
+  (wrap-stage f {:before before-f}))
+
+(defn after-stage
+  "Modifies context after stage function ran"
+  [f before-f]
+  (wrap-stage f {:after before-f}))
+
+(defn into-stages
+  "Applies fn `f` on all `stages` of `chain`. Useful when use in
+  conjunction with `wrap-stage`, `after-stage`, `before-stage`"
+  [chain stages f]
+  (into []
+        (comp (map p/interceptor)
+              (map (fn [ix]
+                     (reduce (fn [ix k]
+                               (if-let [stage (get ix k)]
+                                 (assoc ix k
+                                        (f stage))
+                                 ix))
+                             ix
+                             stages))))
+        chain))
