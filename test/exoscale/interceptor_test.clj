@@ -352,13 +352,13 @@
     (is (= 2 (-> (ix/execute {:x 0}
                              (ix/into-stages [f f]
                                              []
-                                             #(ix/before-stage % m)))
+                                             #(fn [_ s] (ix/before-stage s m))))
                  :x))
         "does nothing")
     (is (= 0 (-> (ix/execute {:x 0}
                              (ix/into-stages [f f]
                                              [:enter]
-                                             #(ix/before-stage % m)))
+                                             (fn [_ s] (ix/before-stage s m))))
                  :x))
         "decs before incs on enter")
 
@@ -366,7 +366,7 @@
                              (ix/into-stages [{:enter f :leave f}
                                               {:enter f :leave f}]
                                              [:enter]
-                                             #(ix/before-stage % m)))
+                                             (fn [_ s] (ix/before-stage s m))))
                  :x))
         "decs before incs on enter, not on leave")
 
@@ -384,8 +384,9 @@
                                                         ctx)}
                                               f
                                               f
-                                              {:enter (fn [ctx] (throw (ex-info "boom" {})))}]
+                                              {:enter (fn [_ctx] (throw (ex-info "boom" {})))}]
                                              [:error]
-                                             #(ix/after-stage % (fn [ctx err] (m ctx)))))
+                                             (fn [_ s]
+                                               (ix/after-stage s (fn [ctx _err] (m ctx))))))
                  :x))
         "first f incs, second too, third blows up, error stage decrs")))

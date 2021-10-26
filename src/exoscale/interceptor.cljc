@@ -133,7 +133,8 @@
      (let [x (f (cond-> ctx (ifn? before) before))]
        (if (p/async? x)
          (cond-> x
-           (ifn? after) (p/then #(after %)))
+           (ifn? after)
+           (p/then #(after %)))
          (cond-> x
            (ifn? after)
            after))))
@@ -158,16 +159,35 @@
 
 (defn into-stages
   "Applies fn `f` on all `stages` of `chain`. Useful when use in
-  conjunction with `wrap-stage`, `after-stage`, `before-stage`"
+  conjunction with `wrap-stage`, `after-stage`, `before-stage`.
+
+  `f` will be a function of a `stage` function, such as the ones
+  returned by `before-stage`, `after-stage`, `wrap-stage` and an
+  `execution context`. The stage function is a normal interceptor
+  stage function, taking 1 or 2 arg depending on stage of
+  execution (enter/leave or error), can potentially be multi-arg if it
+  has to be used for all stage types. The execution context will
+  contain an `:interceptor` key with the value for the current
+  interceptor and `:stage` to indicate which stage we're at (enter,
+  leave or error)."
   [chain stages f]
   (into []
         (comp (map p/interceptor)
               (map (fn [ix]
                      (reduce (fn [ix k]
                                (if-let [stage (get ix k)]
-                                 (assoc ix k
-                                        (f stage))
+                                 (assoc ix
+                                        k
+                                        (f stage {:interceptor ix :stage k}))
                                  ix))
                              ix
                              stages))))
         chain))
+
+;; (defn log-chain-execution
+;;   [chain]
+;;   (into-stages chain
+;;                [:enter :leave :error]
+;;                (wrap-stage {:before (fn ([ctx] (prn :)))})
+;;                )
+;;   )
