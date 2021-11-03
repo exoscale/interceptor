@@ -119,55 +119,36 @@
   (transform f (fn [ctx _] ctx)))
 
 
-(defn current-stage
-  [ctx]
-  )
-
 ;;; stage middlewares
-
-(defn wrap-stage
-  "Runs `before` before the stage function runs, then `after` before we
-  return the new modified context, takes the same arg as a potential
-  stage, so either 1 or 2 depending on `enter`/`leave` or `error`
-  stages. The `before` `after` fns can return any valid ctx
-  value (they are sync/async agnostic)"
-  [f {:keys [before after]}]
-  (fn
-    ([ctx]
-     (let [x (f (cond-> ctx (ifn? before) before))]
-       (if (p/async? x)
-         (cond-> x
-           (ifn? after)
-           (p/then #(after %)))
-         (cond-> x
-           (ifn? after)
-           after))))
-    ([ctx err]
-     (let [x (cond-> ctx (ifn? before) (before err))]
-       (if (p/async? x)
-         (cond-> x
-           (ifn? after)
-           (p/then #(after % err)))
-         (cond-> x
-           (ifn? after)
-           (after err)))))))
 
 (defn before-stage
   "Wraps stage fn with another one"
   [f before-f]
-  (wrap-stage f {:before before-f}))
+  (fn
+    ([ctx] (f (before-f ctx)))
+    ([ctx err] (f (before-f ctx err) err))))
 
 (defn after-stage
   "Modifies context after stage function ran"
-  [f before-f]
-  (wrap-stage f {:after before-f}))
+  [f after-f]
+  (fn
+    ([ctx]
+     (let [ctx (f ctx)]
+       (if (p/async? ctx)
+         (p/then ctx #(after-f %))
+         (after-f ctx))))
+    ([ctx err]
+     (let [ctx (f ctx err)]
+       (if (p/async? ctx)
+         (p/then ctx #(after-f % err))
+         (after-f ctx err))))))
 
 (defn into-stages
   "Applies fn `f` on all `stages` of `chain`. Useful when use in
-  conjunction with `wrap-stage`, `after-stage`, `before-stage`.
+  conjunction with, `after-stage`, `before-stage`.
 
   `f` will be a function of a `stage` function, such as the ones
-  returned by `before-stage`, `after-stage`, `wrap-stage` and an
+  returned by `before-stage`, `after-stage` and an
   `execution context`. The stage function is a normal interceptor
   stage function, taking 1 or 2 arg depending on stage of
   execution (enter/leave or error), can potentially be multi-arg if it
@@ -176,7 +157,7 @@
   interceptor and `:stage` to indicate which stage we're at (enter,
   leave or error).
 
-  `(into-chain [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage f (fn [...] ...))))"
+  `(into-chain [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage stage-f (fn [...] ...))))"
   [chain stages f]
   (into []
         (comp (map p/interceptor)

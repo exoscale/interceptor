@@ -352,13 +352,13 @@
     (is (= 2 (-> (ix/execute {:x 0}
                              (ix/into-stages [f f]
                                              []
-                                             #(fn [_ s] (ix/before-stage s m))))
+                                             #(fn [s _] (ix/before-stage s m))))
                  :x))
         "does nothing")
     (is (= 0 (-> (ix/execute {:x 0}
                              (ix/into-stages [f f]
                                              [:enter]
-                                             (fn [_ s] (ix/before-stage s m))))
+                                             (fn [s _] (ix/before-stage s m))))
                  :x))
         "decs before incs on enter")
 
@@ -366,7 +366,7 @@
                              (ix/into-stages [{:enter f :leave f}
                                               {:enter f :leave f}]
                                              [:enter]
-                                             (fn [_ s] (ix/before-stage s m))))
+                                             (fn [s _] (ix/before-stage s m))))
                  :x))
         "decs before incs on enter, not on leave")
 
@@ -374,7 +374,7 @@
                              (ix/into-stages [{:enter f :leave f}
                                               {:enter f :leave f}]
                                              [:enter :leave]
-                                             #(ix/before-stage % m)))
+                                             (fn [s _] (ix/before-stage s m))))
                  :x))
         "decs before incs on enter and on leave")
 
@@ -386,7 +386,7 @@
                                               f
                                               {:enter (fn [_ctx] (throw (ex-info "boom" {})))}]
                                              [:error]
-                                             (fn [_ s]
+                                             (fn [s _]
                                                (ix/after-stage s (fn [ctx _err] (m ctx))))))
                  :x))
         "first f incs, second too, third blows up, error stage decrs")))
