@@ -122,7 +122,8 @@
 ;;; stage middlewares
 
 (defn before-stage
-  "Wraps stage fn with another one"
+  "Wraps stage fn with another one, basically a middleware that will be run before
+  a stage"
   [f before-f]
   (fn
     ([ctx] (f (before-f ctx)))
@@ -145,7 +146,10 @@
 
 (defn into-stages
   "Applies fn `f` on all `stages` (collection of :enter, :leave and/or :error) of
-  `chain`. Useful when use in conjunction with, `after-stage`, `before-stage`.
+  `chain`. This provides a way to apply middlewares to an entire interceptor
+  chain at definition time.
+
+  Useful when used in conjunction with, `after-stage`, `before-stage`.
 
   `f` will be a function of a `stage` function, such as the ones returned by
   `before-stage`, `after-stage` and an `execution context`. The stage function

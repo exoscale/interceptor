@@ -379,8 +379,7 @@
         "decs before incs on enter and on leave")
 
     (is (= 1 (-> (ix/execute {:x 0}
-                             (ix/into-stages [{:error (fn [ctx e]
-                                                        (prn :here e)
+                             (ix/into-stages [{:error (fn [ctx _e]
                                                         ctx)}
                                               f
                                               f
