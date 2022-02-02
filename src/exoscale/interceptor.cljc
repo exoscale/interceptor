@@ -144,18 +144,17 @@
          (after-f ctx err))))))
 
 (defn into-stages
-  "Applies fn `f` on all `stages` of `chain`. Useful when use in
-  conjunction with, `after-stage`, `before-stage`.
+  "Applies fn `f` on all `stages` (collection of :enter, :leave and/or :error) of
+  `chain`. Useful when use in conjunction with, `after-stage`, `before-stage`.
 
-  `f` will be a function of a `stage` function, such as the ones
-  returned by `before-stage`, `after-stage` and an
-  `execution context`. The stage function is a normal interceptor
-  stage function, taking 1 or 2 arg depending on stage of
-  execution (enter/leave or error), can potentially be multi-arg if it
-  has to be used for all stage types. The execution context will
-  contain an `:interceptor` key with the value for the current
-  interceptor and `:stage` to indicate which stage we're at (enter,
-  leave or error).
+  `f` will be a function of a `stage` function, such as the ones returned by
+  `before-stage`, `after-stage` and an `execution context`. The stage function
+  is a normal interceptor stage function, taking 1 or 2 args depending on stage
+  of execution (enter/leave or error, error taking 2 args), can potentially be
+  multi-arg if it has to be used for all stage types. The execution context is a
+  map that will contain an `:interceptor` key with the value for the current
+  interceptor and `:stage` to indicate which stage we're at (enter, leave or
+  error).
 
   `(into-chain [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage stage-f (fn [...] ...))))"
   [chain stages f]
