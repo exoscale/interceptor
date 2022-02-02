@@ -160,7 +160,7 @@
   interceptor and `:stage` to indicate which stage we're at (enter, leave or
   error).
 
-  `(into-chain [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage stage-f (fn [...] ...))))"
+  `(into-stages [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage stage-f (fn [...] ...))))"
   [chain stages f]
   (into []
         (comp (map p/interceptor)
