@@ -1,5 +1,5 @@
 (ns exoscale.interceptor-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [is deftest]]
             [exoscale.interceptor :as ix]
             [exoscale.interceptor.manifold :as ixm]
             [exoscale.interceptor.core-async :as ixa]
@@ -325,8 +325,8 @@
 (deftest transform-test
   (is (= {:a 1 :b 2 :c 3}
          (-> @(ix/execute {:a 1}
-                       [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
-                                    (ix/transform (fn [ctx x] (merge ctx x {:b 2}))))}])
+                          [{:enter (-> (fn [ctx] (d/success-deferred (assoc ctx :c 3)))
+                                       (ix/transform (fn [ctx x] (merge ctx x {:b 2}))))}])
              (select-keys [:a :b :c]))))
   (is (= {:a 1 :b 2 :c 3}
          (-> (ix/execute {:a 1}
@@ -343,3 +343,49 @@
                            ;; just to make sure we preserve chaining
                            {:enter (fn [ctx] (assoc ctx :g 7))}])
              (select-keys [:a :b :c :d :e :f :g])))))
+
+
+(deftest wrap-test
+  (let [f #(update % :x inc)
+        m #(update % :x dec)]
+
+    (is (= 2 (-> (ix/execute {:x 0}
+                             (ix/into-stages [f f]
+                                             []
+                                             #(fn [s _] (ix/before-stage s m))))
+                 :x))
+        "does nothing")
+    (is (= 0 (-> (ix/execute {:x 0}
+                             (ix/into-stages [f f]
+                                             [:enter]
+                                             (fn [s _] (ix/before-stage s m))))
+                 :x))
+        "decs before incs on enter")
+
+    (is (= 2 (-> (ix/execute {:x 0}
+                             (ix/into-stages [{:enter f :leave f}
+                                              {:enter f :leave f}]
+                                             [:enter]
+                                             (fn [s _] (ix/before-stage s m))))
+                 :x))
+        "decs before incs on enter, not on leave")
+
+    (is (= 0 (-> (ix/execute {:x 0}
+                             (ix/into-stages [{:enter f :leave f}
+                                              {:enter f :leave f}]
+                                             [:enter :leave]
+                                             (fn [s _] (ix/before-stage s m))))
+                 :x))
+        "decs before incs on enter and on leave")
+
+    (is (= 1 (-> (ix/execute {:x 0}
+                             (ix/into-stages [{:error (fn [ctx _e]
+                                                        ctx)}
+                                              f
+                                              f
+                                              {:enter (fn [_ctx] (throw (ex-info "boom" {})))}]
+                                             [:error]
+                                             (fn [s _]
+                                               (ix/after-stage s (fn [ctx _err] (m ctx))))))
+                 :x))
+        "first f incs, second too, third blows up, error stage decrs")))

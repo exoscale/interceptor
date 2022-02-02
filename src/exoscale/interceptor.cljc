@@ -117,3 +117,60 @@
   "Run function for side-effects only and return context"
   [f]
   (transform f (fn [ctx _] ctx)))
+
+
+;;; stage middlewares
+
+(defn before-stage
+  "Wraps stage fn with another one, basically a middleware that will be run before
+  a stage"
+  [f before-f]
+  (fn
+    ([ctx] (f (before-f ctx)))
+    ([ctx err] (f (before-f ctx err) err))))
+
+(defn after-stage
+  "Modifies context after stage function ran"
+  [f after-f]
+  (fn
+    ([ctx]
+     (let [ctx (f ctx)]
+       (if (p/async? ctx)
+         (p/then ctx #(after-f %))
+         (after-f ctx))))
+    ([ctx err]
+     (let [ctx (f ctx err)]
+       (if (p/async? ctx)
+         (p/then ctx #(after-f % err))
+         (after-f ctx err))))))
+
+(defn into-stages
+  "Applies fn `f` on all `stages` (collection of :enter, :leave and/or :error) of
+  `chain`. This provides a way to apply middlewares to an entire interceptor
+  chain at definition time.
+
+  Useful when used in conjunction with, `after-stage`, `before-stage`.
+
+  `f` will be a function of a `stage` function, such as the ones returned by
+  `before-stage`, `after-stage` and an `execution context`. The stage function
+  is a normal interceptor stage function, taking 1 or 2 args depending on stage
+  of execution (enter/leave or error, error taking 2 args), can potentially be
+  multi-arg if it has to be used for all stage types. The execution context is a
+  map that will contain an `:interceptor` key with the value for the current
+  interceptor and `:stage` to indicate which stage we're at (enter, leave or
+  error).
+
+  `(into-stages [...] [:enter :error] (fn [stage-f execution-ctx] (after-stage stage-f (fn [...] ...))))"
+  [chain stages f]
+  (into []
+        (comp (map p/interceptor)
+              (map (fn [ix]
+                     (reduce (fn [ix k]
+                               (if-let [stage (get ix k)]
+                                 (assoc ix
+                                        k
+                                        (f stage {:interceptor ix :stage k}))
+                                 ix))
+                             ix
+                             stages))))
+        chain))
