@@ -1,5 +1,5 @@
 (ns exoscale.interceptor
-  (:refer-clojure :exclude [when])
+  (:refer-clojure :exclude [when remove])
   (:require [exoscale.interceptor.impl :as impl]
             [exoscale.interceptor.protocols :as p]))
 
@@ -66,6 +66,31 @@
          ::queue nil
          ::stack nil))
 
+(defn xform-stack
+  "Takes a context from execution and run xf (transducing fn) on stack, returns a
+  new context "
+  [ctx xf]
+  (update ctx ::stack #(into (empty %) xf %)))
+
+(defn xform-queue
+  "Takes a context from execution and run xf (transducing fn) on queue, returns a
+  new context "
+  [ctx xf]
+  (update ctx ::queue #(into (empty %) xf %)))
+
+(defn xform
+  "Takes a context from execution and run xf (transducing fn) on stack/queue,
+  returns a new context "
+  [ctx xf]
+  (-> ctx
+      (xform-queue xf)
+      (xform-stack xf)))
+
+(defn remove
+  "Remove all interceptors matching predicate from stack/queue, returns context"
+  [ctx pred]
+  (xform ctx (clojure.core/remove pred)))
+
 (defn enqueue
   "Adds interceptors to current context"
   [ctx interceptors]
@@ -117,7 +142,6 @@
   "Run function for side-effects only and return context"
   [f]
   (transform f (fn [ctx _] ctx)))
-
 
 ;;; stage middlewares
 
