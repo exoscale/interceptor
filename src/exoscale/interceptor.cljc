@@ -67,17 +67,20 @@
          ::stack nil))
 
 (defn xform-stack
-  "Takes a context from execution and run xf on stack, returns a new context "
+  "Takes a context from execution and run xf (transducing fn) on stack, returns a
+  new context "
   [ctx xf]
   (update ctx ::stack #(into (empty %) xf %)))
 
 (defn xform-queue
-  "Takes a context from execution and run xf on queue, returns a new context "
+  "Takes a context from execution and run xf (transducing fn) on queue, returns a
+  new context "
   [ctx xf]
   (update ctx ::queue #(into (empty %) xf %)))
 
 (defn xform
-  "Takes a context from execution and run xf on stack/queue, returns a new context "
+  "Takes a context from execution and run xf (transducing fn) on stack/queue,
+  returns a new context "
   [ctx xf]
   (->> ctx
        (xform-queue xf)
