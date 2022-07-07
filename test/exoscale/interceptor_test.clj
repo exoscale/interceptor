@@ -388,7 +388,13 @@
 
 (deftest chain-ops
   (let [chain [{:id ::foo :enter (fn [ctx] (ix/remove ctx #(contains? #{::bar1 ::bar2} (:id %))))}
-               {:id ::bar1 :enter (fn [_] :should-be-removed)}
-               {:id ::bar2 :enter (fn [_] :should-be-removed-too)}
+               {:id ::bar1
+                :enter (fn [_] :should-be-removed)
+                :leave (fn [_] :should-be-removed)
+                :error (fn [_] :should-be-removed)}
+               {:id ::bar2
+                :enter (fn [_] :should-be-removed)
+                :leave (fn [_] :should-be-removed)
+                :error (fn [_] :should-be-removed)}
                {:id ::baz :enter (fn [_] :works)}]]
     (is (= :works (ix/execute {} chain)))))
