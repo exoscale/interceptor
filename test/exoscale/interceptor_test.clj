@@ -67,9 +67,7 @@
                           iinc])
              clean-ctx)))
 
-
-  ;; test flow
-
+;; test flow
 
   (let [ctx {:x []}]
     (is (= [:a :b :c] (ix/execute ctx [a b c :x]))))
@@ -88,7 +86,7 @@
   (let [ctx {:x []}
         a {:enter #(update % :x conj :a)
            :leave #(update % :x conj :f)
-           :error (fn [ctx err]  ctx)}
+           :error (fn [ctx err] ctx)}
         b {:leave throwing
            :enter #(update % :x conj :b)}]
     ;; a b c then c b(boom) a(error)
@@ -97,7 +95,7 @@
   (let [ctx {:x []}
         c {:enter throwing
            :leave #(update % :x conj :d)
-           :error (fn [ctx err]  ctx)}]
+           :error (fn [ctx err] ctx)}]
     ;; a b c(boom) then b a
     (is (= [:a :b :e :f] (:x (ix/execute ctx [a b c])))))
 
@@ -310,9 +308,8 @@
     (is (instance? Exception (a/<!! (ixa/execute {:a 0} [throwing a a]))))
     (is (instance? Exception (a/<!! (ixa/execute {:a 0} [a a throwing]))))))
 
-
 (deftest out-test
-  (let [counter      (atom 0)
+  (let [counter (atom 0)
         deferred-inc (fn [arg]
                        (swap! counter inc)
                        (d/success-deferred (-> arg :a inc)))]
@@ -343,7 +340,6 @@
                            ;; just to make sure we preserve chaining
                            {:enter (fn [ctx] (assoc ctx :g 7))}])
              (select-keys [:a :b :c :d :e :f :g])))))
-
 
 (deftest wrap-test
   (let [f #(update % :x inc)
@@ -389,3 +385,10 @@
                                                (ix/after-stage s (fn [ctx _err] (m ctx))))))
                  :x))
         "first f incs, second too, third blows up, error stage decrs")))
+
+(deftest chain-ops
+  (let [chain [{:id ::foo :enter (fn [ctx] (ix/remove ctx #(contains? #{::bar1 ::bar2} (:id %))))}
+               {:id ::bar1 :enter (fn [_] :should-be-removed)}
+               {:id ::bar2 :enter (fn [_] :should-be-removed-too)}
+               {:id ::baz :enter (fn [_] :works)}]]
+    (is (= :works (ix/execute {} chain)))))

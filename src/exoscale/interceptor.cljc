@@ -1,5 +1,5 @@
 (ns exoscale.interceptor
-  (:refer-clojure :exclude [when])
+  (:refer-clojure :exclude [when remove])
   (:require [exoscale.interceptor.impl :as impl]
             [exoscale.interceptor.protocols :as p]))
 
@@ -66,6 +66,13 @@
          ::queue nil
          ::stack nil))
 
+(defn remove
+  "Remove all interceptors matching predicate from stack/queue, returns context"
+  [ctx pred]
+  (-> ctx
+      (update ::queue #(into (empty %) (clojure.core/remove pred) %))
+      (update ::stack #(into (empty %) (clojure.core/remove pred) %))))
+
 (defn enqueue
   "Adds interceptors to current context"
   [ctx interceptors]
@@ -117,7 +124,6 @@
   "Run function for side-effects only and return context"
   [f]
   (transform f (fn [ctx _] ctx)))
-
 
 ;;; stage middlewares
 
