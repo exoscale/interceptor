@@ -1,13 +1,13 @@
 (defproject exoscale/interceptor "0.1.11-SNAPSHOT"
   :license {:name "ISC"}
   :url "https://github.com/exoscale/interceptor"
-  :dependencies [[org.clojure/clojure "1.10.1"]]
+  :dependencies [[org.clojure/clojure "1.11.1"]]
   :deploy-repositories [["snapshots" :clojars] ["releases" :clojars]]
   :profiles {:dev
-             {:dependencies [[org.clojure/clojurescript "1.10.439"]
-                             [manifold "0.1.8"]
-                             [org.clojure/core.async "0.4.500"]
-                             [cc.qbits/auspex "0.1.0-alpha2"]]
+             {:dependencies [[org.clojure/clojurescript "1.11.54"]
+                             [manifold "0.2.4"]
+                             [org.clojure/core.async "1.5.648"]
+                             [cc.qbits/auspex "1.0.0-alpha9"]]
               :plugins [[lein-cljsbuild "1.1.7"]]
 
               :cljsbuild {:builds
