@@ -89,7 +89,7 @@
 (defn remove
   "Remove all interceptors matching predicate from stack/queue, returns context"
   [ctx pred]
-  (xform ctx #(clojure.core/remove pred)))
+  (xform ctx (clojure.core/remove pred)))
 
 (defn enqueue
   "Adds interceptors to current context"
