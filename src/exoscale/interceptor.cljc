@@ -82,9 +82,9 @@
   "Takes a context from execution and run xf (transducing fn) on stack/queue,
   returns a new context "
   [ctx xf]
-  (->> ctx
-       (xform-queue xf)
-       (xform-stack xf)))
+  (-> ctx
+      (xform-queue xf)
+      (xform-stack xf)))
 
 (defn remove
   "Remove all interceptors matching predicate from stack/queue, returns context"
