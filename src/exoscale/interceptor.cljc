@@ -66,12 +66,27 @@
          ::queue nil
          ::stack nil))
 
+(defn xform-stack
+  "Takes a context from execution and run xf on stack, returns a new context "
+  [ctx xf]
+  (update ctx ::stack #(into (empty %) xf %)))
+
+(defn xform-queue
+  "Takes a context from execution and run xf on queue, returns a new context "
+  [ctx xf]
+  (update ctx ::queue #(into (empty %) xf %)))
+
+(defn xform
+  "Takes a context from execution and run xf on stack/queue, returns a new context "
+  [ctx xf]
+  (->> ctx
+       (xform-queue xf)
+       (xform-stack xf)))
+
 (defn remove
   "Remove all interceptors matching predicate from stack/queue, returns context"
   [ctx pred]
-  (-> ctx
-      (update ::queue #(into (empty %) (clojure.core/remove pred) %))
-      (update ::stack #(into (empty %) (clojure.core/remove pred) %))))
+  (xform ctx #(clojure.core/remove pred)))
 
 (defn enqueue
   "Adds interceptors to current context"
