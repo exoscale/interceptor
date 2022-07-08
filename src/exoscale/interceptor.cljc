@@ -70,7 +70,7 @@
   "Takes a context from execution and run xf (transducing fn) on stack, returns a
   new context "
   [ctx xf]
-  (update ctx ::stack #(into (empty %) xf %)))
+  (update ctx ::stack #(into '() xf (reverse %))))
 
 (defn xform-queue
   "Takes a context from execution and run xf (transducing fn) on queue, returns a
