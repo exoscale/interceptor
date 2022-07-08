@@ -397,4 +397,7 @@
                 :leave (fn [_] :should-be-removed)
                 :error (fn [_] :should-be-removed)}
                {:id ::baz :enter (fn [_] :works)}]]
-    (is (= :works (ix/execute {} chain)))))
+    (is (= :works (ix/execute {} chain)))
+    (is (= {:exoscale.interceptor/stack '(1 2 3)}
+           (ix/xform-stack {:exoscale.interceptor/stack '(1 2 3)}
+                           (map identity))))))
