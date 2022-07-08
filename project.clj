@@ -1,4 +1,4 @@
-(defproject exoscale/interceptor "0.1.12-SNAPSHOT"
+(defproject exoscale/interceptor "0.1.12"
   :license {:name "ISC"}
   :url "https://github.com/exoscale/interceptor"
   :dependencies [[org.clojure/clojure "1.11.1"]]
