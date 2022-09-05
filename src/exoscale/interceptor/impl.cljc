@@ -1,6 +1,7 @@
 (ns ^:no-doc exoscale.interceptor.impl
   "Core implementation"
-  (:require [exoscale.interceptor.protocols :as p]))
+  (:require [exoscale.interceptor.protocols :as p])
+  #?(:bb (:import sci.lang.Var)))
 
 (defrecord Interceptor [enter leave error])
 
@@ -23,7 +24,8 @@
   (interceptor [f]
     (p/interceptor {:enter f}))
 
-  #?(:clj clojure.lang.Var
+  #?(:bb sci.lang.Var
+     :clj clojure.lang.Var
      :cljs cljs.core.Var)
   (interceptor [v]
     (p/interceptor (deref v))))
