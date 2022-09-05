@@ -1,6 +1,7 @@
 (ns ^:no-doc exoscale.interceptor.impl
   "Core implementation"
-  (:require [exoscale.interceptor.protocols :as p]))
+  (:require [exoscale.interceptor.protocols :as p])
+  #?(:bb (:import sci.lang.Var)))
 
 (defrecord Interceptor [enter leave error])
 
