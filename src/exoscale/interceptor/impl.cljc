@@ -24,7 +24,8 @@
     (p/interceptor {:enter f}))
 
   #?(:clj clojure.lang.Var
-     :cljs cljs.core.Var)
+     :cljs cljs.core.Var
+     :bb sci.lang.Var)
   (interceptor [v]
     (p/interceptor (deref v))))
 
