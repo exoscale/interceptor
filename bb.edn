@@ -1,0 +1,6 @@
+{:paths ["src" "bb"]
+ :deps {cc.qbits/auspex {:mvn/version "1.0.0-alpha10"}}
+ :tasks {test-bb
+         {:extra-paths ["test"]
+          :doc "Run bb tests"
+          :task (exec 'test-runner/run-tests)}}}

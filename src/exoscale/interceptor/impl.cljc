@@ -10,8 +10,9 @@
      :cljs cljs.core.PersistentHashMap)
   (interceptor [m] (map->Interceptor m))
 
-  #?(:clj clojure.lang.IRecord
-     :cljs cljs.core.IRecord)
+  #?@(:bb []
+      :default [#?(:clj clojure.lang.IRecord
+                   :cljs cljs.core.IRecord)])
   (interceptor [r] r)
 
   #?(:clj clojure.lang.Fn
