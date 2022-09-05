@@ -9,7 +9,8 @@
      :cljs cljs.core.PersistentHashMap)
   (interceptor [m] (map->Interceptor m))
 
-  clojure.lang.IRecord
+  #?(:clj clojure.lang.IRecord
+     :cljs cljs.core.IRecord)
   (interceptor [r] r)
 
   #?(:clj clojure.lang.Fn
@@ -17,11 +18,13 @@
   (interceptor [f]
     (p/interceptor {:enter f}))
 
-  clojure.lang.Keyword
+  #?(:clj clojure.lang.Keyword
+     :cljs cljs.core.Keyword)
   (interceptor [f]
     (p/interceptor {:enter f}))
 
-  clojure.lang.Var
+  #?(:clj clojure.lang.Var
+     :cljs cljs.core.Var)
   (interceptor [v]
     (p/interceptor (deref v))))
 
