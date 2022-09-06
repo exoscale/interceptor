@@ -31,8 +31,9 @@ jobs:
           # bb: latest                   # Babashka
 
       - name: Setup bb from master
-        run: bash <(curl https://raw.githubusercontent.com/babashka/babashka/master/install) \
-          --version 0.9.163-SNAPSHOT --dir /usr/local/bin
+        run: |
+          bash <(curl https://raw.githubusercontent.com/babashka/babashka/master/install) \
+            --version 0.9.163-SNAPSHOT --dir /usr/local/bin
 
       # Optional step:
       - name: Cache clojure dependencies
