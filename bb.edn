@@ -1,5 +1,11 @@
 {:paths ["src" "bb"]
- :tasks {test-bb
-         {:extra-paths ["test"]
-          :doc "Run bb tests"
-          :task (exec 'test-runner/run-tests)}}}
+ :deps {cc.qbits/auspex {:mvn/version "1.0.0-alpha11"}}
+ :tasks
+ {test:clj
+  {:doc "Run tests with JVM Clojure"
+   :task (shell "lein test")}
+
+  test:bb
+  {:doc "Run bb tests"
+   :extra-paths ["test"]
+   :task (exec 'test-runner/run-tests)}}}

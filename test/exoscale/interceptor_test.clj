@@ -3,7 +3,9 @@
    [clojure.core.async :as a]
    [clojure.test :refer [deftest is]]
    [exoscale.interceptor :as ix]
-   [exoscale.interceptor.core-async :as ixa]))
+   [exoscale.interceptor.auspex :as ixq]
+   [exoscale.interceptor.core-async :as ixa]
+   [qbits.auspex :as q]))
 
 (def iinc {:error (fn [ctx err]
                     ctx)
@@ -211,3 +213,44 @@
     (is (= {:exoscale.interceptor/stack '(1 2 3)}
            (ix/xform-stack {:exoscale.interceptor/stack '(1 2 3)}
                            (map identity))))))
+
+(deftest auspex-test
+  (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
+              :leave (fn [ctx] (q/success-future (update ctx :b inc)))}]
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc iinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc iinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [iinc dinc dinc])
+               clean-ctx)))
+
+    (is (= default-result
+           (-> @(ix/execute start-ctx
+                            [dinc dinc dinc])
+               clean-ctx)))
+
+    (is (= {:a 2 :b 2}
+           (-> @(ix/execute start-ctx [dinc dinc])
+               clean-ctx)))
+
+    (is (= {}
+           (-> @(ixq/execute {} [])
+               clean-ctx))))
+  (let [dinc {:enter (fn [ctx] (q/success-future (update ctx :a inc)))
+              :leave (fn [ctx] (q/error-future ex))}]
+    (is (thrown? Exception @(ixq/execute start-ctx
+                                         [dinc])))))
