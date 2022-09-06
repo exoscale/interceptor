@@ -28,7 +28,11 @@ jobs:
         uses: DeLaGuardo/setup-clojure@9.5
         with:
           lein: latest                 # Leiningen
-          bb: latest                   # Babashka
+          # bb: latest                   # Babashka
+
+      - name: Setup bb from master
+        run: bash <(curl https://raw.githubusercontent.com/babashka/babashka/master/install) \
+          --version 0.9.163-SNAPSHOT --dir /usr/local/bin
 
       # Optional step:
       - name: Cache clojure dependencies
