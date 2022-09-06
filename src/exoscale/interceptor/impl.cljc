@@ -1,7 +1,6 @@
 (ns ^:no-doc exoscale.interceptor.impl
   "Core implementation"
-  (:require [exoscale.interceptor.protocols :as p])
-  #?(:bb (:import sci.lang.Var)))
+  (:require [exoscale.interceptor.protocols :as p]))
 
 (defrecord Interceptor [enter leave error])
 
@@ -10,8 +9,7 @@
      :cljs cljs.core.PersistentHashMap)
   (interceptor [m] (map->Interceptor m))
 
-  #?(:clj clojure.lang.IRecord
-     :cljs cljs.core.IRecord)
+  Interceptor
   (interceptor [r] r)
 
   #?(:clj clojure.lang.Fn
