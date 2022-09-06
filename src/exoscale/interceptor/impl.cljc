@@ -26,7 +26,19 @@
      :clj clojure.lang.Var
      :cljs cljs.core.Var)
   (interceptor [v]
-    (p/interceptor (deref v))))
+    (p/interceptor (deref v)))
+
+  Object
+  (interceptor [x]
+    ;; Fallback : Could already be ILookup'able, would cover custom types (ex:
+    ;; records)
+    (when-not (instance? #?(:clj clojure.lang.ILookup
+                            :cljs cljs.core.ILookup)
+                         x)
+      (throw (ex-info "Unsupported interceptor format/type"
+                      {:exoscale.ex/type :exoscale.ex/invalid
+                       :val x})))
+    x))
 
 ;; not working in cljs for some reason
 #?(:clj
