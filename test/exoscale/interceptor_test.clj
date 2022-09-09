@@ -143,9 +143,9 @@
     (is (= {}
            (-> (a/<!! (ixa/execute {} []))
                clean-ctx)))
-    (let [dinc {:enter (fn [ctx] (doto (a/promise-chan (a/offer! (update ctx :a inc)))))
+    (let [dinc {:enter (fn [ctx] (doto (a/promise-chan (a/offer! ctx (update ctx :a inc)))))
                 :leave (fn [ctx]
-                         (doto (a/promise-chan (a/offer! (ex-info "boom" {})))))}]
+                         (doto (a/promise-chan (a/offer! ctx (ex-info "boom" {})))))}]
 
       (is (instance? Exception (a/<!! (ixa/execute start-ctx
                                                    [dinc]))))
