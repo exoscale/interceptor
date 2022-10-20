@@ -4,10 +4,12 @@
   :dependencies [[org.clojure/clojure "1.11.1"]]
   :deploy-repositories [["snapshots" :clojars] ["releases" :clojars]]
   :profiles {:dev
-             {:dependencies [[org.clojure/clojurescript "1.11.54"]
+             {:source-paths ["dev"]
+              :dependencies [[org.clojure/clojurescript "1.11.54"]
                              [manifold "0.2.4"]
                              [org.clojure/core.async "1.5.648"]
-                             [cc.qbits/auspex "1.0.0-alpha9"]]
+                             [cc.qbits/auspex "1.0.0-alpha9"]
+                             [criterium "0.4.6"]]
               :plugins [[lein-cljsbuild "1.1.7"]]
 
               :cljsbuild {:builds
