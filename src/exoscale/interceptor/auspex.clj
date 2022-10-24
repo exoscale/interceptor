@@ -9,6 +9,10 @@
   (then [d f] (auspex/chain d f))
   (catch [d f] (auspex/catch d f)))
 
+(extend-protocol p/InterceptorContext
+  java.util.concurrent.CompletableFuture
+  (async? [_] true))
+
 (defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   CompletableFuture back"

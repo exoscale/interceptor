@@ -9,6 +9,10 @@
   (then [d f] (d/chain' d f))
   (catch [d f] (d/catch' d f)))
 
+(extend-protocol p/InterceptorContext
+  manifold.deferred.IDeferred
+  (async? [_] true))
+
 (defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   manifold.Deferred back"

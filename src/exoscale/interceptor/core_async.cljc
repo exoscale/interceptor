@@ -48,6 +48,11 @@
                             (f %))))
            out-ch)))
 
+(extend-protocol p/InterceptorContext
+  #?(:cljs cljs.core.async.impl.channels.ManyToManyChannel
+     :clj clojure.core.async.impl.channels.ManyToManyChannel)
+  (async? [_] true))
+
 (defn execute
   "Like `exoscale.interceptor/execute` but ensures we always get a
   core.async channel back"

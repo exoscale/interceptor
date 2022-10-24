@@ -4,9 +4,15 @@
   (then [x f])
   (catch [x f]))
 
-(defn async?
-  [x]
-  (satisfies? AsyncContext x))
+(defprotocol InterceptorContext
+  (async? [x]))
 
 (defprotocol Interceptor
   (interceptor [x] "Produces an interceptor from value"))
+
+(extend-protocol InterceptorContext
+  ;; we extend all Objects including Deferred, core.async channels and CompletableFuture
+  ;; but when their respective namespaces load, they will call extend-protocol
+  ;; thus implementing async? for their respective classes
+  Object
+  (async? [_] false))
