@@ -28,7 +28,7 @@
   (interceptor [v]
     (p/interceptor (deref v)))
 
-  Object
+  #?(:clj Object :cljs object)
   (interceptor [x]
     ;; Fallback : Could already be ILookup'able, would cover custom types (ex:
     ;; records)
