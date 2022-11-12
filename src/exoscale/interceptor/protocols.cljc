@@ -14,5 +14,5 @@
   ;; we extend all Objects including Deferred, core.async channels and CompletableFuture
   ;; but when their respective namespaces load, they will call extend-protocol
   ;; thus implementing async? for their respective classes
-  Object
+  #?(:clj Object :cljs object)
   (async? [_] false))
