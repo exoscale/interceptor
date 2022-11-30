@@ -5,7 +5,7 @@
 (deftest discard-can-return-nil-test
   (testing "ix/discard doesnt return anything"
     (let [f (fn [_] (println "fn called"))
-          test-ix {:name  ::ensure-body-closed
+          test-ix {:name  ::discard-ix
                     :leave (-> f
                                (ix/in [:a])
                                (ix/discard))}]
