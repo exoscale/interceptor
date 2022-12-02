@@ -7,6 +7,11 @@
 (defprotocol InterceptorContext
   (async? [x]))
 
+;; preserve the same behaviour as 0.1.14 (before we introduced InterceptorContext)
+(extend-protocol InterceptorContext
+  nil
+  (async? [_] false))
+
 (defprotocol Interceptor
   (interceptor [x] "Produces an interceptor from value"))
 
