@@ -8,6 +8,10 @@
   #?(:clj clojure.lang.IPersistentMap
      :cljs cljs.core.PersistentHashMap)
   (interceptor [m] (map->Interceptor m))
+  
+  #?(:clj clojure.lang.IPersistentArrayMap
+     :cljs cljs.core.PersistentArrayMap)
+  (interceptor [m] (map->Interceptor m))
 
   Interceptor
   (interceptor [r] r)
@@ -32,9 +36,9 @@
   (interceptor [x]
     ;; Fallback : Could already be ILookup'able, would cover custom types (ex:
     ;; records)
-    (when-not (instance? #?(:clj clojure.lang.ILookup
-                            :cljs cljs.core.ILookup)
-                         x)
+    (when-not
+      #?(:clj (instance? clojure.lang.ILookup x)
+         :cljs (satisfies? cljs.core.ILookup x))
       (throw (ex-info "Unsupported interceptor format/type"
                       {:exoscale.ex/type :exoscale.ex/invalid
                        :val x})))
