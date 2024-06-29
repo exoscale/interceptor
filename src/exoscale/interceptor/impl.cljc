@@ -9,9 +9,9 @@
      :cljs cljs.core.PersistentHashMap)
   (interceptor [m] (map->Interceptor m))
   
-  #?(:clj clojure.lang.IPersistentArrayMap
-     :cljs cljs.core.PersistentArrayMap)
-  (interceptor [m] (map->Interceptor m))
+  #?@(:cljs
+      (cljs.core.PersistentArrayMap
+       (interceptor [m] (map->Interceptor m))))
 
   Interceptor
   (interceptor [r] r)
